@@ -1,0 +1,10 @@
+* excel
+	- thư mục worksheets chứa text của các sheets (C:\Users\vu.hoangba.VTI\Desktop\forder\forder\thư mục đã unzip\xl\worksheets)
+	- thư mục drawings chứa text của các shapes,(C:\Users\vu.hoangba.VTI\Desktop\forder\forder\thư mục đã unzip\xl\drawings)
+	- thư mục charts chứa text của các charts,(C:\Users\vu.hoangba.VTI\Desktop\forder\forder\thư mục đã unzip\xl\charts)
+
+* word:../word
+	- file document.xml chứa text normal(C:\Users\vu.hoangba.VTI\Desktop\forder\forder\thư mục đã unzip\word
+	- thư mục embeddings chứa file excel của chart(C:\Users\vu.hoangba.VTI\Desktop\forder\forder\thư mục đã unzip\word\charts)
+	- thư mục charts chứa text của các shapes,(C:\Users\vu.hoangba.VTI\Desktop\forder\forder\thư mục đã unzip\word\embeddings)
+	
