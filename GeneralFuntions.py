@@ -118,6 +118,7 @@ class General:
         print('baseNameFolder:',baseFolderName)  
         zip_filename=parentPath+ '/'+ baseFolderName+'.zip'
         # for folder in folders:
+        #General.DeleteFolder(self, folders)
         try:
             zip_file = zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED)            
             for dirpath, dirnames, filenames in os.walk(folders):
@@ -138,8 +139,8 @@ class General:
             for root, dirs, files in os.walk(folder, topdown=False):
                 for name in files:
                     os.remove(os.path.join(root, name))
-                    for name in dirs:
-                        os.rmdir(os.path.join(root, name))  
+                for name in dirs:
+                    os.rmdir(os.path.join(root, name))  
             os.rmdir(folder)
             return True
         except:

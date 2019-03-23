@@ -22,7 +22,13 @@ def main():
     # /..........test for docx class............../
     textJson=doc.ReadWordText(docInputPath,outputDocxTextFilePth)
     print('textList:',textJson )
-    doc.WriteTextFromJson(doc.GetZipFolder(),textJson)
+    textList=list()
+    textListChange=list()
+    textList=generalFunctions.ConvertJsonToString(textJson)
+    for text in textList:
+        textListChange.append('abcd')
+    textJsonChange=generalFunctions.ConvertStringToJson(textListChange)
+    doc.WriteTextFromJson(doc.GetZipFolder(),textJsonChange)
     #doc.WriteTextFromJson(docInputPath,textJson)
     
     #/...........test for excel class............../
