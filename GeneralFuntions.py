@@ -3,16 +3,13 @@ import os
 import zipfile
 import sys
 import shutil
+import ConstDefine
 try:
     from xml.etree.cElementTree import XML
     import xml.etree.cElementTree as ET 
 except ImportError:
     from xml.etree.ElementTree import XML
-
-OFFICE_EXTENSION=['.doc','.docx','.ppt','.odf','.pptx','.xls','.xlsx']
-EXCEL_SubFolder=['/xl/worksheets','/xl/drawings','/xl/charts' ]
-WORD_SubForder=['/word/document.xml','/word/embeddings']
-PPT_SubFolder=['/xl/sharedStrings.xml']
+    
 class General:
     def ConvertStringToJson(self,intputStringList):
         jsonArrayString=json.dumps(intputStringList)
@@ -62,11 +59,12 @@ class General:
             return None
         print ('zipFileName=',zipFileName)
         filename=os.path.splitext(os.path.basename(zipFileName))[0]
-        extensionfile=os.path.splitext(os.path.basename(zipFileName))[1]
-        if(extensionfile=='.xlsx'):
-            folderpath=os.path.dirname(zipFileName)
-        else:
-            folderpath=os.path.dirname(zipFileName)+'/'+filename
+        extensionfile=os.path.splitext(os.path.basename(officeFileName))[1]
+        print('extention file:',extensionfile)
+        #if(extensionfile=='.xlsx'):
+         #   folderpath=os.path.dirname(zipFileName)
+       #else:
+        folderpath=os.path.dirname(zipFileName)+'/'+filename
         print('folder out put file is :%s',folderpath);      
         print('file name out put file is :%s',filename);          
         try:
@@ -90,7 +88,7 @@ class General:
             zipFilePath= folderPath+ '/'+ fileName+'1.zip'
             print('old path file is:',officeFilePath)
             print('new path file is:',newfilePath);                          
-            for office_extension in OFFICE_EXTENSION:
+            for office_extension in ConstDefine.OFFICE_EXTENSION:
                 print('extensionFile:',extensionFile, 'office_extension',office_extension)
                 
                 if(office_extension==extensionFile):
@@ -118,11 +116,9 @@ class General:
         print('baseNameFolder:',baseFolderName)  
         zip_filename=parentPath+ '/'+ baseFolderName+'.zip'
         # for folder in folders:
-        #General.DeleteFolder(self, folders)
         try:
             zip_file = zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED)            
             for dirpath, dirnames, filenames in os.walk(folders):
-                #if(dirpath!=folders):
                 print('dirpath : ',dirpath)                
                 for filename in filenames:
                     print('filename=',filename)                        
@@ -150,7 +146,7 @@ class General:
     def GetPathExcelXml(self,zipFolderExcelPath):
         listFilePath=list()
         print('zipFolderExcelPath is :',zipFolderExcelPath)        
-        for subfolder in EXCEL_SubFolder:
+        for subfolder in ConstDefine.EXCEL_SubFolder:
             subfolderPath= zipFolderExcelPath+ subfolder
             listfilePathInSubfolder= General.GetAllFilePathInFolder(self,subfolderPath)
             for filePath in listfilePathInSubfolder:
@@ -161,7 +157,7 @@ class General:
     def GetPathWordXml(self,zipFolderWordPath):
         listFilePath=list()
         print('zipFolderWordPath is :',zipFolderWordPath)        
-        for subfolder in WORD_SubForder:
+        for subfolder in ConstDefine.WORD_SubForder:
             subfolderPath= zipFolderWordPath+ subfolder
             listfilePathInSubfolder= General.GetAllFilePathInFolder(self,subfolderPath)
             for filePath in listfilePathInSubfolder:
@@ -172,7 +168,7 @@ class General:
     def GetPathPPTXml(self,zipFolderPPTPath):
         listFilePath=list()
         print('zipFolderPPTPath is :',zipFolderPPTPath)        
-        for subfolder in PPT_SubFolder:
+        for subfolder in ConstDefine.PPT_SubFolder:
             subfolderPath= zipFolderPPTPath+ subfolder
             listfilePathInSubfolder= General.GetAllFilePathInFolder(self,subfolderPath)
             for filePath in listfilePathInSubfolder:

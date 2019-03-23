@@ -3,12 +3,13 @@ import DocxExtractor
 import PPTExtractor
 import ExcelExtractor
 import GeneralFuntions
-
+import ExTractorOffice
 generalFunctions=GeneralFuntions.General()
 def main():
     doc=DocxExtractor.DocxExtractor()
     ppt=PPTExtractor.PPTExtractor()   
     excel=ExcelExtractor.ExcelExtrator()
+    extractorOffice=ExTractorOffice.ExtractorOffice()
     excelListText=list()
     excelListChange=list()
     
@@ -29,8 +30,8 @@ def main():
         textListChange.append('abcd')
     textJsonChange=generalFunctions.ConvertStringToJson(textListChange)
     doc.WriteTextFromJson(doc.GetZipFolder(),textJsonChange)
-    #doc.WriteTextFromJson(docInputPath,textJson)
     
+    #extractorOffice.ReadText(docInputPath)
     #/...........test for excel class............../
     #excelListJson=excel.ExcelReadText(excelInputPath,outputExcelTextFilePath)
     #excelListText=generalFunctions.ConvertJsonToString(excelListJson)
