@@ -15,7 +15,7 @@ def main():
     outputExcelTextFilePath='../excelText.txt'
     outputPPTTextFilePth='../PPTText.txt'
     outputDocxTextFilePth='../DocxText.txt'
-    docInputPath='/media/glacio/Data/Translate/Project/【AINIX】【RS-Receiver】_Basic Design (v0.7)_VN.docx'
+    docInputPath='/home/truongglacio/Projects/TransLate/TranslateOffice/Bài tập lớn môn hệ thống viễn thông.docx'
     pptInputPath='/media/glacio/Data/Translate/Project/Bổ-sung_Quy-chế-lương_2018.pptx'
     excelInputPath='/media/glacio/Data/Translate/Project/test.xlsx'
     

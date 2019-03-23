@@ -5,11 +5,12 @@ except ImportError:
     from xml.etree.ElementTree import XML
 import zipfile
 import GeneralFuntions
+import os
 generalFunctions=GeneralFuntions.General()
 WORD_NAMESPACE = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
 WORD_PARA = 'p'
 WORD_TEXT = 't'  
-global LenghtListOutput=0
+LenghtListOutput=0
 zipFolder=''
 class DocxExtractor:
 
@@ -47,22 +48,34 @@ class DocxExtractor:
         paragraphs = list()        
         for xmlPath in xmlListFilePath:
             paragraphs=generalFunctions.ReadTextXmlFile(xmlPath,WORD_NAMESPACE,WORD_PARA,WORD_TEXT)
-        DocxExtractor.SetCount(self,paragraphs.count)
+        print('count', paragraphs.count)   
+        DocxExtractor.SetCount(self,len(paragraphs))
         jsonTextList=generalFunctions.ConvertStringToJson(paragraphs)
         generalFunctions.WriteTextFile(jsonTextList, outputTextFilepath)        
         return jsonTextList            
         #........Write Text ...................#
     def WriteTextFromJson(seft, inputPath,textListJson):
         textListInput=list()
+        if(textListJson==None):
+            print('input not incorrect, go exit ')
+            return None
         textListInput=generalFunctions.ConvertJsonToString(textListJson)
-        if(textListInput.count==DocxExtractor.GetCount(seft)):
+        if(len(textListInput)==DocxExtractor.GetCount(seft)):
             i=0
             print("number item correct, do write")
             xmlListFilePath=generalFunctions.GetPathWordXml(inputPath)
             print('xmlFilePath is:',xmlListFilePath)
             for xmlPath in xmlListFilePath:
-                i=generalFunctions.WriteTextXmlFile(xmlPath,WORD_NAMESPACE,WORD_PARA,WORD_TEXT,textListInput,i)            
-            generalFunctions.CompressOfficeFolder(inputPath,'word.zip')
+                i=generalFunctions.WriteTextXmlFile(xmlPath,WORD_NAMESPACE,WORD_PARA,WORD_TEXT,textListInput,i)      
+            # get parent path of file path
+            parentPath=os.path.abspath(os.path.join(inputPath, os.pardir))   
+            baseFolderName=os.path.basename(inputPath)   
+            docFileTarget=parentPath+'/'+baseFolderName+'.docx'
+            compressZipFilePath=generalFunctions.CompressOfficeFolder(inputPath)
+            if(compressZipFilePath==None):
+                return None
+            os.rename(compressZipFilePath, docFileTarget)
+            print('input path :', inputPath)            
         else:
             print("number item incorrect, exit")
             

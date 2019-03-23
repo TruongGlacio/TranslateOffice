@@ -40,14 +40,14 @@ class General:
     def WriteTextXmlFile(self, inputXmlFilePath,NAMESPACE,PARA,TEXT,inputTextList,count):
         OFFICE_PARA=NAMESPACE+PARA
         OFFICE_TEXT=NAMESPACE+TEXT        
-        tree =ET.parse(xmlPath)
+        tree =ET.parse(inputXmlFilePath)
         for paragraph in tree.getiterator(OFFICE_PARA):
             for node in paragraph.getiterator(OFFICE_TEXT):
                 if node.text: 
                     node.text=inputTextList[count]
                     print(node.text) 
                     count=count+1
-        tree.write(xmlFilePath)
+        tree.write(inputXmlFilePath)
         return count
     def WriteTextFile(self, inputString, textFilePath):    
         text_file = open(textFilePath, "w")
@@ -110,21 +110,42 @@ class General:
             print('No such file or directory')
             return None
         
-    def CompressOfficeFolder(self,folders, zip_filename):    
-        print('CompressOfficeFolder Function')        
-        zip_file = zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED)
-        print('folder path: ',folders)         
+    def CompressOfficeFolder(self,folders):    
+        print('CompressOfficeFolder Function')   
+        parentPath=os.path.abspath(os.path.join(folders, os.pardir))   
+        baseFolderName=os.path.basename(folders)    
+        print('folder path: ',folders)      
+        print('baseNameFolder:',baseFolderName)  
+        zip_filename=parentPath+ '/'+ baseFolderName+'.zip'
         # for folder in folders:
-        baseFolderName=os.path.basename(folders)
-        for dirpath, dirnames, filenames in os.walk(folders):
-            if(dirpath!=folders):
+        try:
+            zip_file = zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED)            
+            for dirpath, dirnames, filenames in os.walk(folders):
+                #if(dirpath!=folders):
                 print('dirpath : ',dirpath)                
                 for filename in filenames:
-                    zip_file.write(
-                        os.path.join(dirpath, filename),
-                        os.path.relpath(os.path.join(dirpath, filename),folders))
-                    zip_file.close()     
-                    
+                    print('filename=',filename)                        
+                    zip_file.write(os.path.join(dirpath, filename), os.path.relpath(os.path.join(dirpath, filename),folders))
+            zip_file.close() 
+            General.DeleteFolder(self,folders)                                        
+            return zip_filename    
+        except:
+            print ('error while compress folder, go exit')
+            return None
+    def DeleteFolder(self,folder):
+        # remove folder after compress                                
+        try:
+            for root, dirs, files in os.walk(folder, topdown=False):
+                for name in files:
+                    os.remove(os.path.join(root, name))
+                    for name in dirs:
+                        os.rmdir(os.path.join(root, name))  
+            os.rmdir(folder)
+            return True
+        except:
+            print('Cant delete folder, go exit')   
+            return False
+            
     def GetPathExcelXml(self,zipFolderExcelPath):
         listFilePath=list()
         print('zipFolderExcelPath is :',zipFolderExcelPath)        
