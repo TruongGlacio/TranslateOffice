@@ -1,0 +1,1896 @@
+
+
+
+
+
+
+
+                                 RS-Receiver
+
+
+
+                                Basic Design
+
+                                    V0.7
+
+                              History of change
+
+|Versio|Date      |Person  |Change content                           |
+|n     |          |in      |                                         |
+|      |          |charge  |                                         |
+|0.1   |2018/08/22|VTI     |Create new                               |
+|0.2   |2018/09/05|VTI     |Update comment của cust lần 1            |
+|0.3   |2018/09/17|VTI     |Update comment của cust lần 2            |
+|0.4   |2018/09/21|VTI     |Update comment của cust lần 3            |
+|0.5   |2018/09/28|VTI     |Update comment của cust lần 4            |
+|0.6   |2018/10/09|VTI     |Update comment của cust lần 5            |
+|0.7   |2018/12/07|VTI     |Add nội dung về clipboard                |
+
+                                   Mục lục
+1.     RS-Receiver Lite    4
+  1.1. Yêu cầu cần thực hiện      4
+   1.1.1.    Migration    4
+   1.1.2.    Add thêm tính năng mới     9
+   1.1.3.    Abnormal case       22
+  1.2. Phương châm thiết kế       22
+   1.2.1.    UI Design    22
+   1.2.2.    Migration    25
+   1.2.3.    Add new feature     31
+  1.3. Data Flow     42
+   1.3.1.    Flow data giữa View và Controller       42
+   1.3.2.    Flow data giữa Comport, Controller và View    42
+  1.4. Sequence      43
+   1.4.1.    Init app     43
+   1.4.2.    Xử lý input ->output       44
+   1.4.3.    Exit app     45
+   1.4.4.    Xử lý error  46
+  1.5. Phương châm xử lý lỗi      46
+  1.6. Phạm vi ảnh hưởng   46
+  1.7. Các item giới hạn   46
+
+
+
+
+      RS-Receiver Lite
+
+
+1 Yêu cầu cần thực hiện
+
+   Dự án cần thực hiện 2 việc chính bao gồm: Migration và add thêm các tính
+   năng mới.
+
+1 Migration
+
+      Chuyển app hiện tại từ MFC ->C#. Việc chuyển đổi phải đảm bảo các điều
+      kiện sau:
+      1) OS support bao gồm:
+            • Windows7 32/64/WOW64
+            •  Windows8.1 32/64/WOW64
+            •  Windows10 32/64/WOW64
+      2) Hoạt động của phần đang không update spec, thì  sẽ  giống  với  sản
+         phẩm hiện hành （RS-receiverLiteV3.0）. Cụ thể  các  chức  năng  sẽ
+         được mô tả chi tiết từ mục 1.1.1.1 đến 1.1.1.6.
+      3)     Hoạt     động     cơ     bản     của      「Sendkeys」「Virtual
+         key/バーチャルキー」「Character/キャラクタ」 mode output thì  giống
+         với sản phẩm hiện hành.
+      4)      Tốc      độ       output       của       「Sendkeys」「Virtual
+         key/バーチャルキー」「Character/キャラクタ」 mode output sẽ duy trì
+         tốc độ gần như giống với sản phẩm hiện tại.  Cách  confirm  tốc  độ
+         thực tế là đọc liên tục 20 lần QR code đã được đăng ký data  khoảng
+         40 byte, rồi cho output ra Notepad.
+      5) Đối với source code thì khi chuyển sang .Net cho lần này, thì logic
+         chỉ liên quan về mặt xử lý đến mỗi ComStar sẽ hủy bỏ,  chỉ  tối  ưu
+         hóa những logic xử lý cần ở RS-receiverLite.
+      6) Design màn hình thì muốn thay đổi theo phong cách hiện đại. Về icon
+         thì khách hàng sẽ cung cấp
+      7) Về các control sử dụng thì trên .Net có những control bổ  sung  nên
+         cần xem xét việc sử dụng control cho phù hợp. VD Control để chỉ  có
+         thể  input  được  giá  trị   số   sẽ   thay   đổi   thành   control
+         「NumericUpDown」.
+  Sau đây là mô tả chi tiết về các chức năng cần đảm bảo về mặt  hoạt  động
+  sau khi migration
+
+1 Chức năng setup & maintenance
+
+       • Chức năng setup
+         Cho phép user cài đặt app vào máy tính. Dù là OS 32 bit hay 64 bit
+         thì cũng sẽ tự detect và tiến hành cài đặt. Chi tiết sẽ mô  tả  rõ
+         hơn ở chức năng add thêm No.5. Sau khi cài đặt xong, cho phép user
+         thực hiện đăng kí bản quyền sử dụng app
+       • Chức năng maintenance: Cho phép user thực hiện
+             •  Repair Application: Sửa chữa app - sử dụng khi có  các  vấn
+               đề như app đã cài đặt mà không khởi động dược,…
+             •  Delete Application: Gỡ app khỏi máy tính
+
+2 Chức năng khởi động app và exit app
+
+       • Khởi động App: Có thể khởi động app bằng nhiều cách khác nhau  (mở
+         bằng shortcut trên desktop, chạy từ Start Menu,…)
+       • Exit App: Đóng toàn bộ các cổng COM đang sử dụng, thoát hoàn  toàn
+         app, Giải phóng các tài nguyên hệ thống (RAM, CPU,..) mà app  đang
+         sử dụng
+
+3 Các chức năng trên main menu
+
+      1) File
+             •  Create new file setting:
+             Tạo một file setting mới chứa các thông số setting  mặc  định.
+             Người dùng có thể chọn tên file và vị trí lưu file này
+             •  Open file setting
+             Mở file setting đã lưu hoặc sẵn có, load các thông số đọc được
+             từ file đó vào App để thực hiện xử lý.
+             •  Overwrite file setting
+             Lưu tất cả các thông số setting đang được sử dụng trên app vào
+             file đang sử dụng, ghi đè các thông số cũ  đang  lưu  ở  trong
+             file.
+             •  Save as file setting
+             Lưu các thông số Setting đang sử  dụng  thành  một  file  mới,
+             không ghi đè file được chọn từ Open file setting
+             •  Recent file open
+             Hiển thị list các file setting mới được mở gần đây
+             •  Exit app
+             Thực hiện chức năng Exit App ở mục 1.1.1.2
+      2) Setting
+             •  Thuộc tính Default
+             Reset tất cả các thông số Setting đang được  sử  dụng  trở  về
+             thông số Default
+             •  Virtual key action code
+             Đặt keycode cho các action KEYDOWN, KEYUP, KEYDOWN&UP
+             •  Thuộc tính Device
+             Mở hộp  thoại  「デバイス属性」,  cho  phép  người  dùng  chọn
+             device, thêm device, xem, chỉnh sửa, lưu, xóa các  thuộc  tính
+             setting được sử dụng cho từng device.
+             •  Thuộc tính input
+             Mở hộp thoại 「属性設定」,  tab「入力属性」,  cho  phép  người
+             dùng xem, sửa và lưu lại các thuộc tính setting dùng cho  việc
+             nhận diện dữ từ tất cả các device
+             •  Edit data output
+             Mở hộp thoại「属性設定」,  tab「入力データの編集」,  cho  phép
+             người dùng xem, sửa và lưu lại các thông tin setting dùng  cho
+             việc chỉnh sửa dữ liệu nhận từ device
+             •  Thuộc tính output
+             Mở hộp thoại「属性設定」, tab「出力属性」, cho phép người dùng
+             xem, sửa  và lưu các thuộc tính setting dùng cho  việc  output
+             dữ liệu đã edit theo 「入力データの編集」. Người dùng  có  thể
+             chọn đích output data ra active window, file hoặc socket
+             •  ON/OFF connect device communication
+             Thiết lập kết nối (ON) hoặc hủy kết nối (OFF)  với  device  và
+             output theo các thông số setting được set ở  「デバイス属性」,
+             「入力属性」, 「出力属性」.
+      3) Setting khi khởi động
+             •  Icon hóa
+             Thiết lập bật/tắt chế độ không hiện màn  hình  chính  và  icon
+             trên taskbar khi khởi động app. (Thay đổi setting này  chỉ  áp
+             dụng khi tắt app đi mở lại)
+             •  Start tự động input device
+             Thiết lập bật/tắt chế độ tự động thiết lập kết nối với  device
+             và  output  theo   các   thông   số   setting   được   set   ở
+             「デバイス属性」, 「入力属性」, 「出力属性」ngay sau khi  khởi
+             động app. (Thay đổi setting này chỉ áp dụng khi tắt app đi  mở
+             lại)
+             •  Chế độ hiển thị I/O
+             Thiết lập chế độ hiển thị dữ liệu Input và  output  tương  ứng
+             trên 2 vùng hiển thị input và output trên màn hình chính  ngay
+             sau khi khởi động. Nếu chọn thì sẽ hiển thị  tất  cả  dữ  liệu
+             nhận được và output tương ứng của nó lên vùng hiển thị. Nếu bỏ
+             chọn thì sẽ chỉ hiện dữ liệu mới nhất, khi có dữ liệu mới  thì
+             sẽ xóa cái cũ đang hiển thị đi. (Thay đổi setting này  chỉ  áp
+             dụng khi tắt app đi mở lại)
+             •  Tắt hiển thị lỗi devices
+             Thiết lập bật/tắt chế độ thông  báo  lỗi  xảy  ra  bằng  popup
+             window. Khi chọn, app sẽ không thông báo bằng popup cho  người
+             dùng khi có lỗi xảy ra.
+      4) Hiển thị
+             •  Hiển thị toolbar
+            Thiết lập bật/tắt trạng thái hiển thị toolbar trên GUI.  Gồm  2
+       phần
+             •  Combobox các file setting trong cùng folder với  file  đang
+               chọn
+             •  Các button điều khiển – refer phần 1.1.1.4
+             •  Hiển thị status bar
+             Thiết lập bật/tắt hiển thị status bar trên
+             •  Hiển thị I/O
+             Thiết lập chế độ hiển thị input/output  trên  màn  hình  chính
+             (giống với “Chế độ hiển thị I/O” ở phần [3 – Setting khi  khởi
+             động], nhưng có thể thay đổi trong quá trình hoạt động).
+             •  Hiển thị số byte input
+             Thiết lập ẩn/hiện độ dài theo số byte của  dữ  liệu  input  đã
+             được nhận diện từ dữ liệu được device gửi đến.
+             •  Hiển thị log
+             Thiết lập ẩn/hiện cửa sổ log
+      5) Windows
+             •  Chế độ view ngang
+             Xếp 2 vùng hiển thị input và output song song theo chiều ngang
+             (input ở trên, output ở dưới)
+             •  Chế độ view dọc
+             Xếp 2 vùng hiển thị input và output song song theo  chiều  dọc
+             (input bên trái, output bên phải)
+             •  重ねて表示及び並べて表示
+             Sẽ xóa bỏ vì không cần thiết nữa.
+             •  Chế độ hiển thị character/binary
+             Thiết lập chế độ hiển thị mã hex tương ứng với từng  byte  của
+             dữ liệu input và output, vị trí hiển thị là  ở  nửa  dưới  màn
+             hình)
+             •  Clear windows
+             Làm sạch vùng hiển thị dữ liệu trên màn hình chính, xóa các dữ
+             liệu đã in ra trước đó khỏi vùng hiển thị
+             •  Hiển thị data input
+             Đặt con trỏ nhập liệu vào vùng input
+             •  Hiển thị data output
+             Đặt con trỏ nhập liệu vào vùng output
+
+
+      6) Help
+             •  Search topic
+             •  Mở cửa sổ trợ giúp, người dùng có thể  tìm  các  hướng  dẫn,
+               FAQ
+             •  Product Registration
+             •  Mở cửa sổ đăng ký license.  Người  dùng  có  thể  kích  hoạt
+               license cho app
+             •  View version info
+             •  Mở hộp thoại chứa các thông tin về app như  phiên  bản,  nhà
+               sản xuất,… để người dùng tham khảo.
+
+4  Các chức năng trên tool bar
+
+      1) Open file
+         Refer tính năng “Open setting file” ở 1.1.1.3 mục 1) File
+      2) Quick access
+          • New file
+            Refer tính năng “Create new file setting:”  ở  1.1.1.3  mục  1)
+            File
+          • Save file
+            Refer tính năng “Overwrite file setting” ở 1.1.1.3 mục 1) File
+          • Setting device
+            Refer tính năng “Thuộc tính Device” ở 1.1.1.3 mục 2) Setting
+          • Setting thuộc tính input
+            Refer tính năng “Thuộc tính Input” ở 1.1.1.3 mục 2) Setting
+          • Setting edit data for output
+            Refer tính năng “Edit data output” ở 1.1.1.3 mục 2) Setting
+          • Setting thuộc tính output
+            Refer tính năng “Thuộc tính output” ở 1.1.1.3 mục 2) Setting
+          • ON/OFF connect device communication
+            Refer tính năng “ON/OFF connect device communication” ở 1.1.1.3
+       mục 2) Setting
+          • Hiển thị data I/O
+            Refer tính năng “Hiển thị I/O” ở 1.1.1.3 mục 4) Hiển thị
+          • Hiển thị số byte input
+            Refer tính năng “HIển thị số byte input” ở 1.1.1.3 mục 4)  Hiển
+            hị
+          • Hiển thị character/binary
+            Refer tính năng “Chế độ hiển thị  character/binary”  ở  1.1.1.3
+            mục 5) Windows
+          • Clear windows
+            Refer tính năng “Clear windows” ở 1.1.1.3 mục 5) Windows
+          • Version info
+            Refer tính năng “View version info” ở 1.1.1.3 mục 5) Windows
+          • Help
+            Sau khi click vào button help,  nếu  tiếp  tục  click  vào  một
+            button khác, thông tin mô tả về tính năng tương ứng với  button
+            đó sẽ hiện ra tại vị trí click chuột.
+
+
+5 Thông tin hiển thị trên status bar
+
+      1) Góc trái
+         Hiển thị các thông tin giải thích cho component mà con  trỏ  chuột
+         đang trỏ đến
+      2) Góc phải
+         Hiển thị các thông tin tóm tắt về file setting đang được  sử  dụng
+         (tên cổng COM, chế độ input,…)
+
+6  Sample program
+
+         Là các app sử dụng các method automation của RS-Receiver Lite,  các
+         app này được viết độc lập bằng VB, C#,  VB.NET,  Microsoft  Access.
+         App sample có khả năng khởi động  RS-Receiver  Lite,  sử  dụng  RS-
+         Receiver Lite dưới dạng OLE Automation Server.
+
+
+
+       2 Add thêm tính năng mới
+
+   Cần add thêm 11 tính năng mới, cụ thể sẽ mô tả chi tiết ở bên dưới.
+
+1  Chức năng phân tích GS1 data
+
+       Add thêm chức năng phân tích data theo chuẩn GS1
+       • Bổ sung group box 「Resolution GS1/GS1分解」, thiết lập để có  thể
+         chỉ định có thực hiện resolution GS1 hay  không.  (phần  ※2  trong
+         image)
+       • Sử dụng symbology identifier được output từ scanner để  phán  đoán
+         đối tượng resolution GS1. Trường hợp đã  được  phán  đoán  là  đối
+         tượng resolution GS1 thì sẽ output data dựa trên điều kiện extract
+         resolution.
+       • Trường hợp data không thuộc đối tượng resolution GS1, hoặc là  đối
+         tượng resolution GS1 những đã không thể resolution.  Thì  sẽ  thực
+         hiện delete như thông thường, replace/ cut, edit  data  được  thêm
+         vào.
+       •          Thêm          option「Loại          bỏ          symbology
+         identifier/ｼﾝﾎﾞﾙ体系識別子を取り除く」 vào 「Delete/削除」để  phán
+         đoán symbology identifier. Tuy nhiên symbology identifier khó  đối
+         ứng theo phương pháp phân biệt code đặc biệt từ mỗi lần  được  add
+         thêm, rồi delete, nên sẽ phán đoán bằng cách  「Trong  trường  hợp
+         đầu của chuỗi ký tự bắt đầu bằng "]" thì sẽ loại bổ  tổng  cộng  3
+         byte」(refer ※1 trong image)
+         [pic]
+
+
+       • Click button [GS1抽出設定] sẽ open màn  hình  detail  cho  setting
+         extract resolution GS1. Về spec  chung  của  GS1  thì  refer  file
+         GS1_General_Specifications.pdf
+
+
+         [pic]
+         Các AI sẽ được chỉ định tùy ý từ combobox
+       • Trên menu Setting sẽ add thêm menu item [GS1  ｼﾝﾎﾞﾙ体系識別子]  để
+         quản lý Symbology identifier. Khi chọn từ menu sẽ open dialog quản
+         lý SI như sau
+       [pic]
+             • Button Add/Edit:  Open  dialog  cho  phép  input  thông  tin
+               識別子và ｼﾝﾎﾞﾙ名
+             • Button Delete: Xóa SI khỏi list
+             • Button Setting: Apply setting
+             • Button Cancel: Cancel setting
+             • Default value của list sẽ như bảng sau:
+
+
+               |ｼﾝﾎﾞﾙ  |  |  |識別子  |
+|GS1-128|  |  |]C1  | |
+|GS1 QR Code |]Q3  | |
+|GS1         |]d2  | |
+|DataMatrix  |     | |
+|GS1       |  |[e0  | |
+|Databar   |  |     | |
+|GS1         |[e0～3  |
+|Composite   |        |
+
+
+       • Trên menu Setting sẽ add thêm menu item [GS1  ｱﾌﾟﾘｹｰｼｮﾝ識別子]  để
+         quản lý Application identifier. Khi chọn từ menu  sẽ  open  dialog
+         quản lý AI như sau
+         [pic]
+             • Button Add/Edit:  Open  dialog  cho  phép  input  thông  tin
+               識別子và ｼﾝﾎﾞﾙ名
+             • Button Delete: Xóa AI khỏi list
+             • Button Setting: Apply setting
+             • Button Cancel: Cancel setting
+             • Button初期状態戻す: List  hiển  thị  ở  trạng  thái  default
+               value. List value default thì xem ở sheet [(01)_AI] của file
+               VerUp要件.xlsx
+
+
+2  Setting delay output
+
+       Add thêm 2 thông số:  「ｷｬﾗｸﾀ間ﾃﾞｨﾚｲ」và 「ﾃﾞｰﾀ間ﾃﾞｨﾚｲ」
+       「ｷｬﾗｸﾀ間ﾃﾞｨﾚｲ」は1文字出力する毎のﾃﾞｨﾚｲ。
+       「ﾃﾞｰﾀ間ﾃﾞｨﾚｲ」は1ﾃﾞｰﾀと認識されたﾃﾞｰﾀ毎のﾃﾞｨﾚｲ。
+       Vị trí setting trên UI như sau:
+       [pic]
+
+3 入出力ﾃﾞｰﾀ表示のASCIIとHEXの選択範囲連動
+
+       現行のシステムはユーザがクリックして、マウスオーバーしたサイドのデータ
+       範囲のみ強調表示となる。そのため、ユーザはそのデータ範囲が他のサイド（
+       HexまたはASCII）のどの範囲に該当するか分からない。
+       その問題を顧慮したところ、ユーザがどのサイドで押下・マウスオーバーを操
+       作しても残りのサイドの該当データ範囲も強調表示させるようにする。
+       UIの設計は下記のイメージとなります。
+       [pic]
+
+4  Chức năng duy trì kết nối Bluetooth
+
+      Trường hợp đã chỉ định kết nối qua BT, nếu xảy ra mất kết nối  thì  sẽ
+      tiến hành reconnect cho đến khi có kết nối trở lại. Thời gian giữa các
+      lần reconnect sẽ do user setting trên UI. Default value là 2s
+      [pic]
+
+
+
+      5 インストール時の32/64bitの自動判定
+
+       Hiện tại, RS receiver Lite chỉ support cài dặt bằng  tay.  User  phải
+       chú ý đến hệ điều hành trên máy tính và chọn đúng folder để cài  đặt.
+       Nếu chọn folder cài đặt không đúng với OS của máy tính thì sẽ bị  báo
+       lỗi trong quá trình cài đặt. Để đơn giản quá trình  setup  cho  user,
+       chúng tôi đề xuất add thêm chức cài mới cho phép user  lựa  chọn  cài
+       đặt tự động hoặc cài đặt băng tay với tổ chức folder như sau:
+       [pic]
+
+
+6  削除機能のプレビュー機能
+
+       現行のバージョンでは、ユーザが入力属性タブのデータ削除を選択する場合、
+       削除する内容が分からず、何バイトを削除する、どの位置から削除するという
+       情報しか分からない。これによって、重要な内容を削除してしまうこともある
+       。
+       この問題を発生しないように、入力データ編集及びプレビューを追加しようと
+       考えています。機能の詳細情報は以下に記述します。
+          ❖
+            プレビュー画面への遷移用ボタンを追加する。「先頭」「後尾」の値を入
+            力テキストから数値に変更する。
+                                    [pic]
+               Hình 1.1.2.6.1: Tùy chọn chức năng delete byte
+
+          ❖ プレビュー画面: Sẽ có 2 mode là Preview mode và Edit mode
+             • プレビューモード
+            [pic]
+             Hình 1.1.2.6.2: Cửa sổ chức năng Preview khi delete
+             ・ユーザのドラッグ・ドロップにより、取り除き・出力対象の位置・範
+             囲を変更する。
+             ・ユーザがプレビュー上のドラッグ・ドロップを行うと、設定値が変更
+             される。
+             ・「OK」ボタンを押下すると、変更値が入力属性タブに更新されて、前
+             の画面に戻る。
+             ・「キャンセル」ボタンを押下すると、変更値が入力属性タブに更新さ
+             れず、前の画面に戻る。
+             • 編集モード
+               このモードでは、ユーザはマウスオーバーされている文字の位置に文
+               字追加・削除することができる。データ入力仕方は以下の2種類ある
+               。
+               + 直接にキーボードにて入力する。
+               +  「JIS8  単位コー  ド表」ボタンを押下して、「JIS8  単位コー
+               ド表」から文字を入力する。
+                                    [pic]
+             Hình 1.1.2.6.3: Cửa sổ chức năng Preview khi delete
+
+7  Speeding up output của Sendkeys mode và Virtual Key mode
+
+       Item này sẽ được xem xét sau khi việc migration sang  .Net  đã  thành
+       công với các điều kiện đã mô tả ở mục 1.1.1
+
+8  Đối ứng input cho nhiều cổng COM
+
+       Hiện tại hệ thống chỉ hỗ trợ xử lý 1 device tại một  thời  điểm,  nếu
+       muốn kết nối đến thiết bị mới phải ngừng kết nốt thiết bị  cũ  trước.
+       Yêu cầu đặt ra là có thể xử lý cho nhiều device tại cùng 1 thời điểm.
+       Để đáp ứng được yêu cầu này, chúng tôi thiết kế thêm chức năng  Multi
+       device được trình bày như dưới đây.
+          ❖ Main screen:
+                                    [pic]
+            Hình 1.1.2.8.1: Main screen đối ứng cho multi device
+
+             •  Mỗi device sẽ được hiển trị trên UI bằng 1 tab control.  Max
+               là 5 device
+             •  Khi device connected thì icon chuyển sang màu xanh
+             •  khi device disconnect thì icon chuyển sang màu đỏ
+             •  Để close tab thì user click vào Icon X.
+             •  Add thêm button Connect All/Disconect All
+
+       ❖ Attribute Setting (input attribute, Edit data, Ouput attribute)
+                                    [pic]
+
+             •  Mỗi device sẽ được hiển thị bởi 1 tab
+             •  Các thông tin input attribute, edit data output  và  output
+               attribute setting sẽ được đưa sang thành tab ngang. Nội dung
+               các item khác trên màn hình vẫn như hiện tại.
+             •  Data sau khi được setting sẽ được  save  xuống  file  .RSL.
+               Toàn bộ thông tin config của các device sẽ được  save  chung
+               vào 1 file.
+       ❖ Log screen
+         Mỗi device sẽ output log ra 1 tab trong cửa sổ log. Nội dung  hiển
+         thị log vẫn như mô tả trong manual
+
+
+                                    [pic]
+          Hình 1.1.2.8.2: Giao diện log cho chức năng multi device
+
+       ❖ Main Menu
+             •  Để đáp ứng cho chức năng multidevice, menu sẽ được thêm một
+               trường item 一括接続ON/OFF như hình 1.1.2.8.3 bên dưới:
+                                    [pic]
+            Hình 1.1.2.8.3: Menu Setting đối ứng cho Multi device
+
+
+             •  [一括接続ON/OFF] : Thực hiện connect all or  disconect  all
+               các device hiện đang avaible trong hệ thống. Nếu tất cả  các
+               device đang được connect thì text trên item này. sẽ hiển thị
+               là connect all , các trường hợp khác  là  thì  hiển  thị  là
+               disconnect all.
+             •  COM1 ～ COM5: Hiển thị trạng thái ON/OFF của  từng  device.
+               User có thể connect hoặc disconnect từng  device  theo  mong
+               muốn bằng cách click chọn vào từng item. Khi click  vào  mỗi
+               item trên, trạng thái của device  tương  ứng  sẽ  chuyển  từ
+               Connect-> Disconnect nếu device  đó  đang  được  connect  và
+               ngược lại.
+
+9  Clip board
+
+       Chức năng này cho phép copy data output vào ClipBoard của OS (Ghi  đè
+       data trong ClipBoard). Người dùng có thể paste data  này  vào  active
+       window như Notepad, Excel v.v
+       Về UI thì sẽ thêm option [クリップボード] vào màn hình  出力属性  như
+       image
+       Về hoạt động thì khi chọn đích output là Active window với option  là
+       [クリップボード] thì data output sẽ được  đưa  đồng  thời  ra  active
+       window và vào ClipBoard của OS.
+                                    [pic]
+            Hình 1.1.2.9: Tùy chọn output với chức năng ClipBoard
+
+
+10 Chức năng change endcode của input thành khác với S-JIS
+
+       Hệ thống hiện tại đang chỉ support encoding  data  S-JIS.  Khi  chuẩn
+       encoding của data từ máy quét đến không phải là Shift JIS,  hoặc  khi
+       user cần một chuẩn encoding  khác  với  Data  Output  thì  chức  năng
+       encoding hiện tại không còn đáp ứng được  nữa.  Nếu  không  thay  đổi
+       support các chuẩn encoding khác, thì việc encoding sẽ phát sinh  lỗi.
+       Chức năng change encoding này sẽ hỗ trợ xử lý vấn đề này.
+       User có thể select chuẩn encoding mong muốn và app sẽ thực  hiện  đưa
+       data output ra đúng với chuẩn này.
+       Các chuẩn support gồm có:
+              • Shift-JIS
+              • UTF-8
+              • UTF-16 Little Endian
+              • UTF-16 Big Endian.
+       Về UI thì sẽ  bổ  sung  group  box  [文字コード]  ở  màn  hình  Input
+       Attribute Setting như hình 1.1.2.10 dưới đây:
+                                    [pic]
+
+
+11 受信したデータをソケット通信で送信する機能
+
+       Chức năng này sẽ thực hiện việc gửi dữ liệu output đã hoàn  thành  xử
+       lý qua socket đến server. Các thông tin về  server  sẽ  được  setting
+       trên màn hình Output Attribute Setting (IP,  Port,  timeout,  số  lần
+       retry)
+       Trường hợp gửi data bị lỗi thì sẽ cho phép lưu data chưa được gửi  đi
+       vào file log. Sau khi thực hiện retry mà vẫn bị lỗi thì  sẽ  play  âm
+       thanh error để user biết. Vị trí lưu file log và file sound error  sẽ
+       được chỉ định trên màn hình setting.
+
+
+       [pic]
+
+
+
+       3 Abnormal case
+
+               Table 1.1.2-1: List các case phát sinh abnormal
+|#    |Case phát sinh abnormal |Xử lý khi xảy ra abnormal                 |
+|1    |Không thể kết nối tới   |Hiển thị Pop-up Dialog báo lỗi và dừng kết|
+|     |device                  |nối                                       |
+|2    |Không thể đọc dữ liệu từ|Hiển thị Pop-up Dialog báo lỗi và dừng kết|
+|     |device                  |nối                                       |
+|3    |Không thể khôi phục kết |Hiển thị dialog hỏi người dùng về việc có |
+|     |nối Bluetooth sau 2 lần |muốn dừng việc thử kết nối lại hay không  |
+|     |thử lại                 |                                          |
+
+
+2 Phương châm thiết kế
+
+
+1 UI Design
+
+       Dưới đây là screen prototype của app, đã bao gồm cả UI của  add  thêm
+       tính năng mới
+      1) Main screen
+         <paste screen prototype>
+
+
+
+
+
+
+                                 Giải thích
+|#  |Item name               |Giải thích                                   |
+|1  |Menu                    |Menu của app bao gồm: File, Setting…..       |
+|2  |…                       |…                                            |
+|3  |                        |                                             |
+|4  |                        |                                             |
+
+
+
+
+      2) Setting input attribute
+         <paste screen prototype>
+
+
+
+
+      3) Setting edit of output
+         [pic]
+
+
+      4) Setting output attribute
+         <paste screen prototype>
+
+
+      5) Setting Device input
+      6) Add more
+
+
+
+         2 Migration
+
+
+1  Chuyển đổi ComStar
+
+       Hệ thống hiện tại đang tồn tại các vấn đề sau:
+          •  Có nhiều phần code thừa
+          •  cấu trúc source sắp xếp chưa khoa học nên khó maintain
+          •  Giao diện người dùng là kiểu MDI application  nên  nhìn  không
+            được đẹp
+       Mục đích của việc chuyển đổi ComStar từ MFC sang .Net là để xử lý các
+       vấn đề trên. Phương châm của việc chuyển đổi  là  thay  đổi  về  kiến
+       trúc, không thay đổi về chức năng. Kiến trúc mới xin  refer  các  mục
+       tiếp theo.
+       Liên quan đến phần OLE Automation, hệ thống mới vẫn sẽ hỗ trợ đầy  đủ
+       các phương thức như  hệ  thống  cũ  bao  gồm  LoadConfig,  CommStart,
+       CommStop, ViewClear, ViewOff, QuitApplication. Để đối  ứng  với  việc
+       kết nối nhiều device thì phương thức CommStart và  CommStop  sẽ  thực
+       hiện start và stop tất cả các device được đăng ký trong file setting.
+       Các phương thức còn lại giữ nguyên logic như hệ thống cũ.
+
+
+2  Chuyển đổi phần DLL và static lib
+
+      1) Comport
+             •  Thay thế DCB Serial bằng SerialPort class trong C#.
+             •  Hiện tại đang sử dụng vòng lặp while  để  đọc  liên  tục  và
+               phát hiện dữ liệu mới từ cổng COM.  Khi  chuyển  lên  C#  thì
+               chúng ta sẽ dùng handle event DataReceived để  nhận  dữ  liệu
+               trả về từ COM.
+             •  Thay thế hàm SendMessage và PostMessage bằng  cơ  chế  event
+               trong C#.
+      2) RILicense
+         Project RSLicense sẽ được giữ nguyên logic khi chuyển đổi qua  C#.
+         Một số method do không được sử dụng nên sẽ xóa bỏ
+      3) ComStarkeys
+         Do trên C# đã có class SendKeys hỗ trợ cho  mode  Sendkey  nên  sẽ
+         chuyển project này thành 1  class  của  project  RSReceiver.  Phần
+         logic sẽ move thẳng sang tương ứng
+
+
+
+         3  Chuyển đổi phần Common
+
+       Phần Common sẽ được thiết kế là 1 share project nhằm  mục  đích  chứa
+       những gì mà tất cả các project khác đều sử dụng được. Common  sẽ  bao
+       gồm những item sau:
+          • String define: Define các message, string
+          • Const define: Define các constant
+          • Utility: Define các API common
+
+
+
+       4  Kiến trúc tổng thể của hệ thống hiện tại
+
+
+                                    [pic]
+        Hình 1.2.2.4. Sơ đồ kiến trúc tổng thể của hệ thống hiện tại
+                          Table 1.2.2.4. Giải thích
+|#   |Project    |Module     |Sub Module  |Description                |
+|1   |RILicense(l|           |            |Verify licenses            |
+|    |ib)        |           |            |                           |
+|2   |Comport(DLL|           |            |Connect RS232, Send data to|
+|    |)          |           |            |RS receiver project.       |
+|3   |ComStarKeys|           |            |Xử lý việc gửi data tới    |
+|    |           |           |            |active Window              |
+|6   |           |Controller |ComStar     |Init application, thực thi |
+|    |           |           |            |các tác vụ như create      |
+|    |           |           |            |objects(controller and     |
+|    |           |           |            |view), settup môi trường,  |
+|    |           |           |            |kiểm tra licenses.         |
+|7   |ComStar    |           |ComRS232C   |Quản lý các device đang    |
+|    |           |           |            |được config. Load các thông|
+|    |           |           |            |số setting từ port, từ đó  |
+|    |           |           |            |khơi tạo luồng xử lý data  |
+|8   |           |           |Runtime     |Nhận dữ liệu từ Comport,   |
+|    |           |           |            |thực hiện các chức năng như|
+|    |           |           |            |edit, cut,…                |
+|9   |           |           |Senkey      |Nhận data sau khi handle từ|
+|    |           |           |            |Runtime, Send data ra  tới |
+|    |           |           |            |khối ComStarKey để thự hiện|
+|    |           |           |            |gửi data tới activeWindow… |
+|10  |           |View       |Main Window |Là giao diện chính của     |
+|    |           |           |            |application                |
+|11  |           |           |Child Window|Là các của sổ được mở ra từ|
+|    |           |           |            |main, bao gồm: các popups, |
+|    |           |           |            |các dialog.                |
+|12  |           |Log        |OpeLog      |Chứa các thông tin log hệ  |
+|    |           |           |            |thống được define trong    |
+|    |           |           |            |manual                     |
+|14  |           |OLE        |            |Chức năng cho phép khởi    |
+|    |           |           |            |động RS Receiver Lite từ   |
+|    |           |           |            |các app khác               |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+5  Kiến trúc tổng thể của hệ thống mới
+
+                                    [pic]
+
+           Hình 1.2.2.5. Sơ đồ kiến trúc tổng thể của hệ thống mới
+
+     ※ Phần nằm trong đường nét đứt sẽ  là  phần  thực  hiện  xử  lý  multi
+       thread
+
+
+                                 Giải thích
+|Pro |Project     |Module       |Sub Module   |Description                  |
+|1   |RILicense(li|             |             |Đảm nhận việc xử lý liên quan|
+|    |b)          |             |             |đến lincense                 |
+|2   |Comport(DLL)|             |             |Connect port theo chuẩn      |
+|    |            |             |             |RS232, Send data to RS       |
+|    |            |             |             |receiver project.            |
+|3   |Common      |String Define|             |Define các string values     |
+|4   |            |Const Define |             |Define các constant          |
+|5   |            |Utility      |             |Define các method common dùng|
+|    |            |             |             |chung trong các project      |
+|6   |RSReceiver  |Controller   |AppEngine    |Init application. Thực thi   |
+|    |            |             |             |các tác vụ như create        |
+|    |            |             |             |objects(controller and       |
+|    |            |             |             |viewer), settup môi trường,  |
+|    |            |             |             |kiểm tra licenses.           |
+|7   |            |             |DevicesManage|Quản lý các device đang được |
+|    |            |             |r            |setting. Load các thông số,  |
+|    |            |             |             |từ đó khởi tạo luồng xử lý   |
+|    |            |             |             |data.                        |
+|8   |            |             |RSDataHandler|Nhận dữ liệu từ Comport, thực|
+|    |            |             |             |hiện các chức năng xử lý data|
+|    |            |             |             |như edit, delete, replace,…  |
+|9   |            |             |RSOutput     |Nhận data sau khi đã được xử |
+|    |            |             |             |lý từ RSDataHandler. Control |
+|    |            |             |             |việc gửi data ra socket,     |
+|    |            |             |             |active window và file        |
+|10  |            |View         |MainForm     |Quản lý giao diện chính của  |
+|    |            |             |             |application                  |
+|11  |            |             |SubViews     |Là các của sổ được mở ra từ  |
+|    |            |             |             |main, bao gồm: các popups,   |
+|    |            |             |             |các edit window,…            |
+|12  |            |RSLog        |SysLog       |Chứa các thông tin debug phục|
+|    |            |             |             |vụ cho quá trình develop như |
+|    |            |             |             |debug …                      |
+|13  |            |             |OpeLog       |Chứa các thông tin log hệ    |
+|    |            |             |             |thống được define ở spec     |
+|14  |            |ProfileManage|             |Implement the function to    |
+|    |            |r            |             |read/write informations to   |
+|    |            |             |             |RSL file.                    |
+
+
+
+
+
+    6 Module Detail
+
+    Phần này sẽ chi tiết hóa một số khối trong phần kiến trúc tổng thể
+       ❖ RSOutput
+                                    [pic]
+
+
+                                 Giải thích
+|#    |Item             |Description                                  |
+|1    |Data View        |Quản lý data sử dụng cho việc hiển thị trên  |
+|     |                 |View                                         |
+|2    |Socket Client    |Quản lý data sử dụng cho việc gửi qua socket |
+|     |                 |đến server                                   |
+|3    |Data File        |Quản lý data sử dụng cho việc ghi vào file   |
+|4    |Data Active      |Quản lý data sử dụng cho việc gửi đến Active |
+|     |Window           |window                                       |
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+       ❖ RSDataHandler
+       [pic]
+
+
+                                 Giải thích
+|#    |Item             |Description                                  |
+|1    |InputHandler     |Xử lý detect data từ COM port                |
+|2    |DataEditHandler  |Xử lý Edit data từ được gửi đến từ device:   |
+|     |                 |bao gồm cutbyte, cutchar, replace char,      |
+|     |                 |addchar                                      |
+|3    |GS1 Detector     |Xử lý nhận biết data GS1                     |
+|4    |GS1 Analyzer     |Xử lý phân tích data GS1                     |
+|5    |OutputHandler    |Xử lý data sau khi đã qua khối               |
+|     |                 |DataEditHandler theo setting ở Output        |
+|     |                 |Attribute                                    |
+
+
+       ❖ MainForm
+         [pic]
+                                 Giải thích
+|#    |Item             |Description                                  |
+|1    |Menu             |Quản lý main menu của app                    |
+|2    |Tool Bar         |Quản lý các chức năng trên thanh toolbar     |
+|3    |Status bar       |Quản lý việc hiện thị thông tin trên status  |
+|     |                 |bar                                          |
+|4    |Input View -     |Hiển thị data input ở dạng mã ASCII          |
+|     |ASCII            |                                             |
+|5    |Input View – HEX |Hiển thị data input ở dạng mã HEX            |
+|6    |Output View -    |Hiển thị data Output ở dạng mã ASCII         |
+|     |ASCII            |                                             |
+|7    |Output View – HEX|Hiển thị data Output ở dạng mã HEX           |
+
+
+
+    7 Cấu trúc folder/file của project
+
+RSReceiver (Window Form Application)
+|#   |File name                  |Description                             |
+|1   |                           |                                        |
+|2   |                           |                                        |
+|3   |                           |                                        |
+|4   |                           |                                        |
+|5   |                           |                                        |
+|6   |                           |                                        |
+|7   |                           |                                        |
+
+ComPort (DLL)
+|#   |File name                  |Description                             |
+|1   |                           |                                        |
+|2   |                           |                                        |
+|3   |                           |                                        |
+|4   |                           |                                        |
+|5   |                           |                                        |
+|6   |                           |                                        |
+|7   |                           |                                        |
+
+RILicense (Static lib)
+
+|#   |File name                  |Description                             |
+|1   |                           |                                        |
+|2   |                           |                                        |
+|3   |                           |                                        |
+
+
+3 Add new feature
+
+
+1  Chức năng phân tích GS1 data
+
+         ❖ UI:  Refer màn hình Input  Attribute  Setting,  AI  Setting,  SI
+           Setting
+         ❖ Logic xử lý: Sẽ hực hiện trong khối RSDataHandler
+            • Data flow sẽ như sơ đồ sau
+           [pic]
+                  Hình 1.2.3.1-1. RS Data Handler data flow
+                         Bảng 1.2.3.1-1. Giải thích
+|#    |Item             |Description                                  |
+|1    |Input Data       |Dữ liệu từ scanner                           |
+|2    |Encoded Data     |Dữ liệu đầu vào đã được encode               |
+|3    |GS1 Data         |Dữ liệu được nhận dạng là thuộc chuẩn GS1    |
+|4    |Non-GS1 Data     |Dữ liệu được nhận dạng là không thuộc chuẩn  |
+|     |                 |GS1                                          |
+|5    |GS1 Analyzed Data|Dữ liệu thuộc chuẩn GS1 đã được phân tích và |
+|     |                 |xử lý, có thể bao gồm các bước: cắt bỏ 3 ký  |
+|     |                 |tự đầu, phân tích theo AI, chèn thêm kí tự   |
+|     |                 |phân cách, chèn thêm kí tự định danh GS1     |
+|6    |Unanalyzed Data  |Dữ liệu được nhận dạng là thuộc chuẩn GS1    |
+|     |                 |nhưng không thể phân tích được               |
+|7    |Edited Input Data|Dữ liệu đã được xử lý theo các setting ở Edit|
+|     |                 |Output Data                                  |
+|8    |Edited Output    |Dữ liệu đã được xử lý theo các setting ở     |
+|     |Data             |Output Attributes                            |
+
+
+            • Chức năng Settingｱﾌﾟﾘｹｰｼｮﾝ識別子(AI)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+              [pic]
+                   Hình 1.2.3.1-2. Sequence GS1 AI Setting
+                         Bảng 1.2.3.1-2. Giải thích
+|#   |Item             |Description                                 |
+|1.0 |Open GS1 AI      |Người dùng click vào tùy chọn「GS1          |
+|    |Setting          |ｱﾌﾟﾘｹｰｼｮﾝ識別子」trên menu ở MainForm       |
+|1.1 |Show GS1 AI      |MainForm gửi yêu cầu hiện màn hình AI       |
+|    |Setting          |Setting đến GS1 AI Setting                  |
+|1.2 |Load data from   |GS1 AI Setting đọc các thông tin được lưu từ|
+|    |AI_Setting.ini   |file AI_Setting.ini để phục vụ cho màn hình |
+|    |                 |AI Setting                                  |
+|1.3 |Show             |GS1 AI Setting hiện màn hình AI Setting với |
+|    |                 |các thông tin vừa đọc từ AI_Setting.ini     |
+|2.0 |Click Add/Edit   |Người dùng bấm vào button 追加 trên màn hình|
+|    |                 |GS1 AI Setting                              |
+|2.1 |Show GS1 AI      |GS1 AI Setting gửi yêu cầu hiện màn hình con|
+|    |Add/Edit         |GS1 AI Add/Edit đến GS1 AI Add/Edit         |
+|2.2 |Show             |GS1 AI Add/Edit hiện màn hình GS1 AI        |
+|    |                 |Add/Edit                                    |
+|2.3 |Input AI data    |Người dùng tiến hành nhập / thay đổi dữ liệu|
+|    |                 |ở các textbox trên màn hình GS1 AI Add/Edit |
+|2.4 |Update View      |Màn hình GS1 AI Add/Edit cập nhật hiển thị  |
+|    |                 |theo input từ người dùng                    |
+|2.5 |Click OK         |Người dùng click OK trên màn hình GS1 AI    |
+|    |                 |Add/Edit, hoàn thành việc thêm AI           |
+|2.6 |Update AI List   |Màn hình GS1 AI Add/Edit gửi yêu cầu cập    |
+|    |View             |nhật hiển thị đến GS1 AI Setting            |
+|2.7 |Close            |GS1 AI Add/Edit đóng màn hình GS1 AI        |
+|    |                 |Add/Edit                                    |
+|2.8 |Update View      |GS1 AI Setting cập nhật hiển thị với AI vừa |
+|    |                 |được thêm                                   |
+|2.9 |Click Cancel     |Người dung click Cancel trên màn hình GS1 AI|
+|    |                 |Add/Edit, hủy bỏ việc thêm AI               |
+|2.10|Close            |GS1 AI Add/Edit đóng màn hình GS1 AI        |
+|    |                 |Add/Edit                                    |
+|3.0 |Click Delete     |Người dùng nhấn vào button 削除 trên màn    |
+|    |                 |hình GS1 AI Setting                         |
+|3.1 |Get Selected Item|GS1 AI Setting thông tin của item đang được |
+|    |                 |select trên AI List view                    |
+|3.2 |Delete Selected  |GS1 AI Setting xóa item đang được select    |
+|    |Item From List   |khỏi AI List View và cập nhật lại hiển thị  |
+|    |View             |                                            |
+|4.0 |Click Default    |Người dùng nhấn vào button 初期状態に戻す   |
+|    |                 |trên màn hình GS1 AI Setting                |
+|4.1 |Load default data|GS1 AI Setting load lại toàn bộ list AI mặc |
+|    |                 |định                                        |
+|4.2 |Update AI List   |GS1 AI Setting cập nhật lại toàn bộ AI List |
+|    |View             |view với list AI mặc định                   |
+|5.0 |Click Configure  |Người dùng nhấn vào button 設定 trên màn    |
+|    |                 |hình GS1 AI Setting                         |
+|5.1 |Check Setting    |GS1 AI Setting kiểm tra tính hợp lệ của toàn|
+|    |Validation       |bộ các dữ liệu đang hiển thị trên List View |
+|5.2 |Save current AI  |GS1 AI Setting lưu toàn bộ AI list đang hiển|
+|    |list to          |thị vào file AI_Setting.ini                 |
+|    |AI_Setting.ini   |                                            |
+|5.3 |Close            |GS1 AI Setting đóng màn hình GS1 AI Setting |
+|5.4 |Invalid Setting  |GS1 AI Setting phát hiện có item không hợp  |
+|    |                 |lệ và thông báo cho người dùng là cần phải  |
+|    |                 |sửa                                         |
+|5.5 |Invalid Setting  |Người dùng hoàn thành việc chỉnh sửa dữ liệu|
+|    |Fixed            |vào click vào button 設定                   |
+|5.6 |Save current AI  |GS1 AI Setting lưu toàn bộ AI list đang hiển|
+|    |list to          |thị vào file AI_Setting.ini                 |
+|    |AI_Setting.ini   |                                            |
+|5.7 |Close            |GS1 AI Setting đóng màn hình GS1 AI Setting |
+|6.0 |Click Cancel     |Người dùng click vào button キャンセル trên |
+|    |                 |màn hình GS1 AI Setting                     |
+|6.1 |Check unsaved    |GS1 AI Setting kiểm tra xem có chỉnh sửa nào|
+|    |change           |của người dùng chưa được lưu hay không      |
+|6.2 |Close            |GS1 AI Setting đóng màn hình GS1 AI Setting |
+|6.3 |Request User     |GS1 AI Setting phát hiện có thay đổi chưa   |
+|    |Confirmation     |được lưu vào thông báo đến người dùng       |
+|6.4 |Apply            |Người dùng chấp nhận lưu các thay đổi       |
+|6.5 |Setting          |GS1 AI Setting thực hiện lại quy trình từ   |
+|    |Validation       |5.1 đến 5.7                                 |
+|6.6 |Save current AI  |GS1 AI Setting lưu toàn bộ AI list đang hiển|
+|    |list to          |thị vào file AI_Setting.ini                 |
+|    |AI_Setting.ini   |                                            |
+|6.7 |Close            |GS1 AI Setting đóng màn hình GS1 AI Setting |
+|6.8 |Discard          |Người dùng chọn hủy bỏ các thay đổi chưa lưu|
+|6.9 |Close            |GS1 AI Setting đóng màn hình GS1 AI Setting |
+
+
+            • Chức năng Setting (ｼﾝﾎﾞﾙ体系識別子)SI
+
+
+           [pic]
+                     Hình 1.2.3.1-3. Sequence SI Setting
+                         Bảng 1.2.3.1-3. Giải thích
+|#   |Item             |Description                               |
+|1.0 |Open GS1 SI      |Người dùng click vào tùy chọn「GS1        |
+|    |Setting          |ｼﾝﾎﾞﾙ体系識別子」trên menu ở MainForm     |
+|1.1 |Show GS1 SI      |MainForm gửi yêu cầu hiện màn hình SI     |
+|    |Setting          |Setting đến GS1 SI Setting                |
+|1.2 |Load data from   |GS1 SI Setting đọc các thông tin được lưu |
+|    |SI_Setting.ini   |từ file SI_Setting.ini để phục vụ cho màn |
+|    |                 |hình SI Setting                           |
+|1.3 |Show             |GS1 SI Setting hiện màn hình SI Setting   |
+|    |                 |với các thông tin vừa đọc từ              |
+|    |                 |SI_Setting.ini                            |
+|2.0 |Click Add/Edit   |Người dùng bấm vào button 追加 trên màn   |
+|    |                 |hình SI Setting                           |
+|2.1 |Show GS1 Add/Edit|GS1 SI Setting gửi yêu cầu hiện màn hình  |
+|    |                 |con GS1 SI Add/Edit đến GS1 SI Add/Edit   |
+|2.2 |Show             |GS1 SI Add/Edit hiện màn hình GS1 SI      |
+|    |                 |Add/Edit                                  |
+|2.3 |Input SI data    |Người dùng tiến hành nhập / thay đổi dữ   |
+|    |                 |liệu ở các textbox trên màn hình GS1 SI   |
+|    |                 |Add/Edit                                  |
+|2.4 |Update View      |Màn hình GS1 SI Add/Edit cập nhật hiển thị|
+|    |                 |theo input từ người dùng                  |
+|2.5 |Click OK         |Người dùng click OK trên màn hình GS1 SI  |
+|    |                 |Add/Edit, hoàn thành việc thêm SI         |
+|2.6 |Update SI List   |Màn hình GS1 SI Add/Edit gửi yêu cầu cập  |
+|    |View             |nhật hiển thị đến GS1 SI Setting          |
+|2.7 |Close            |GS1 SI Add/Edit đóng màn hình GS1 SI      |
+|    |                 |Add/Edit                                  |
+|2.8 |Update View      |GS1 SI Setting cập nhật hiển thị với SI   |
+|    |                 |vừa được thêm                             |
+|2.9 |Click Cancel     |Người dung click Cancel trên màn hình GS1 |
+|    |                 |SI Add/Edit, hủy bỏ việc thêm SI          |
+|2.10|Close            |GS1 SI Add/Edit đóng màn hình GS1 SI      |
+|    |                 |Add/Edit                                  |
+|3.0 |Click Delete     |Người dùng nhấn vào button 削除 trên màn  |
+|    |                 |hình GS1 SI Setting                       |
+|3.1 |Get Selected Item|GS1 SI Setting thông tin của item đang    |
+|    |                 |được select trên SI List view             |
+|3.2 |Delete Selected  |GS1 SI Setting xóa item đang được select  |
+|    |Item From List   |khỏi SI List View và cập nhật lại hiển thị|
+|    |View             |                                          |
+|4.0 |Click Default    |Người dùng nhấn vào button 初期状態に戻す |
+|    |                 |trên màn hình GS1 SI Setting              |
+|4.1 |Load default data|GS1 SI Setting load lại toàn bộ list SI   |
+|    |                 |mặc định                                  |
+|4.2 |Update SI List   |GS1 SI Setting cập nhật lại toàn bộ SI    |
+|    |View             |List view với list SI mặc định            |
+|5.0 |Click Configure  |Người dùng nhấn vào button 設定 trên màn  |
+|    |                 |hình GS1 SI Setting                       |
+|5.1 |CheckSetting     |GS1 SI Setting kiểm tra tính hợp lệ của   |
+|    |Validation       |toàn bộ các dữ liệu đang hiển thị trên    |
+|    |                 |List View                                 |
+|5.2 |Save current SI  |GS1 SI Setting lưu toàn bộ SI list đang   |
+|    |list to          |hiển thị vào file SI_Setting.ini          |
+|    |SI_Setting.ini   |                                          |
+|5.3 |Close            |GS1 SI Setting đóng màn hình GS1 SI       |
+|    |                 |Setting                                   |
+|5.4 |Invalid Setting  |GS1 SI Setting phát hiện có item không hợp|
+|    |                 |lệ và thông báo cho người dùng là cần phải|
+|    |                 |sửa                                       |
+|5.5 |Invalid Setting  |Người dùng hoàn thành việc chỉnh sửa dữ   |
+|    |Fixed            |liệu vào click vào button 設定            |
+|5.6 |Save current SI  |GS1 SI Setting lưu toàn bộ SI list đang   |
+|    |list to          |hiển thị vào file SI_Setting.ini          |
+|    |SI_Setting.ini   |                                          |
+|5.7 |Close            |GS1 SI Setting đóng màn hình GS1 SI       |
+|    |                 |Setting                                   |
+|6.0 |Click Cancel     |Người dùng click vào button キャンセル    |
+|    |                 |trên màn hình GS1 SI Setting              |
+|6.1 |Check unsaved    |GS1 SI Setting kiểm tra xem có chỉnh sửa  |
+|    |change           |nào của người dùng chưa được lưu hay không|
+|6.2 |Close            |GS1 SI Setting đóng màn hình GS1 SI       |
+|    |                 |Setting                                   |
+|6.3 |Request User     |GS1 SI Setting phát hiện có thay đổi chưa |
+|    |Confirmation     |được lưu vào thông báo đến người dùng     |
+|6.4 |Apply            |Người dùng chấp nhận lưu các thay đổi     |
+|6.5 |Setting          |GS1 SI Setting thực hiện lại quy trình từ |
+|    |Validation       |5.1 đến 5.7                               |
+|6.6 |Save current SI  |GS1 SI Setting lưu toàn bộ SI list đang   |
+|    |list to          |hiển thị vào file SI_Setting.ini          |
+|    |SI_Setting.ini   |                                          |
+|6.7 |Close            |GS1 SI Setting đóng màn hình GS1 SI       |
+|    |                 |Setting                                   |
+|6.8 |Discard          |Người dùng chọn hủy bỏ các thay đổi chưa  |
+|    |                 |lưu                                       |
+|6.9 |Close            |GS1 SI Setting đóng màn hình GS1 SI       |
+|    |                 |Setting                                   |
+
+
+
+
+
+
+            • Chọn vào checkbox delete 3 ký tự đầu của data và checkbox phân
+              tích GS1
+      [pic]
+                   Hình 1.2.3.1-4. Sequence GS1 checkboxs
+                         Bảng 1.2.3.1-4. Giải thích
+|#   |Item             |Description                                  |
+|1.0 |Open Edit Output |Người dùng thực hiện mở màn hình Edit Output |
+|    |Data             |Data từ MainForm                             |
+|1.1 |Show Edit Output |MainForm gửi yêu cầu hiện màn hình Edit      |
+|    |Data             |Output Data                                  |
+|1.2 |Load Data from   |Edit Output Data tiến hành đọc thông tin     |
+|    |RSL              |setting từ file .RSL                         |
+|1.3 |Show             |Edit Output Data hiện màn hình Edit Output   |
+|    |                 |Data                                         |
+|2.0 |Check SI Delete  |Người dùng thực hiện check/uncheck vào       |
+|    |                 |checkbox ｼﾝﾎﾞﾙ体系識別子を取り除く           |
+|2.1 |Update View      |Edit Output Data cập nhật hiển thị theo thao |
+|    |                 |tác của người dùng                           |
+|3.0 |Check GS1 Analyze|Người dùng thực hiện check/uncheck vào       |
+|    |                 |checkbox シンボル体系識別子を判定してGS1分解 |
+|    |                 |を行う                                       |
+|3.1 |Update View      |Edit Output Data cập nhật hiển thị theo thao |
+|    |                 |tác của người dùng                           |
+|4.0 |Click OK         |Người dùng nhấn OK trên màn hình Edit Output |
+|    |                 |Data, hoàn tất setting                       |
+|4.1 |Save Setting to  |Edit Output Data lưu các thông tin setting   |
+|    |RSL              |đang hiển thị vào file RSL                   |
+|4.2 |Close            |Edit Output Data đóng màn hình Edit Output   |
+|    |                 |Data                                         |
+|5.0 |Click Cancel     |Người dùng nhấn Cancel, hủy bỏ các setting đã|
+|    |                 |thay đổi                                     |
+|5.1 |Close            |Edit Output Data đóng màn hình Edit Output   |
+|    |                 |Data                                         |
+
+
+            • Màn hình GS1抽出設定
+           [pic]
+              Hình 1.2.3.1-5. Sequence GS1 Analyzation Setting
+                         Bảng 1.2.3.1-5. Giải thích
+|#   |Item             |Description                                  |
+|1.0 |Click GS1 Analyze|Người dùng nhấn vào button GS1抽出設定 trên  |
+|    |Setting          |màn hình Edit Output Data                    |
+|1.1 |Show GS1 Analyze |Edit Output Data gửi yêu cầu hiển thị màn    |
+|    |Setting          |hình GS1 Analyzation Setting đến GS1         |
+|    |                 |Analyzation Setting                          |
+|1.2 |Load setting from|GS1 Analyzation Setting đọc thông tin setting|
+|    |RSL              |từ file RSL                                  |
+|1.3 |Show             |GS1 Analyzation Setting hiển thị màn hình GS1|
+|    |                 |Analyzation Setting                          |
+|2.0 |Click JIS8       |Người dùng click vào button JIS8 単位コード表|
+|    |単位コー ド表 at |trong vùng GS1分解 / GS1出力trên màn hình GS1|
+|    |GS1分解 / GS1出力|Analyzation Setting                          |
+|2.1 |Get current      |GS1 Analyzation Setting lấy content hiện tại |
+|    |content of       |trong textbox 可変長切り文字 /               |
+|    |可変長切り文字 / |追加されるイメージ                           |
+|    |追加されるイメー |                                             |
+|    |ジ               |                                             |
+|2.2 |Show JIS8 Char   |GS1 Analyzation Setting gửi yêu cầu hiện màn |
+|    |Table            |hình JIS8 Char Table đến JIS8 Chả Table      |
+|2.3 |Show             |JIS8 Char Table hiện màn hình JIS8 Char Table|
+|2.4 |Edit Data        |Người dùng thực hiện chỉnh sửa trên màn hình |
+|    |                 |JIS8 Char Table                              |
+|2.5 |Update View      |JIS8 Char Table cập nhật hiển thị theo thao  |
+|    |                 |tác của người dùng                           |
+|2.6 |Click OK         |Người dùng click button OK trên màn hình JIS8|
+|    |                 |Char Table, hoàn thành việc chỉnh sửa        |
+|2.7 |Update           |JIS8 Char Table gửi yêu cập nhật content của |
+|    |可変長切り文字 / |textbox 可変長切り文字 / 追加されるイメージ  |
+|    |追加されるイメー |đến GS1 Analyzation Setting                  |
+|    |ジ               |                                             |
+|2.8 |Close            |JIS8 Char Table đóng màn hình JIS8 Char Table|
+|2.9 |Update View      |GS1 Analyzation Setting cập nhật hiển thị    |
+|    |                 |theo 2.8                                     |
+|2.10|Click Cancel     |Người dùng nhấn vào button Cancel trên màn   |
+|    |                 |hình JIS8 Char Table                         |
+|2.11|Close            |JIS8 Char Table đóng màn hình JIS8 Char Table|
+|3.0 |Click on Empty   |Người dùng nhấn vào ComboBox chưa có nội dung|
+|    |ComboBox in 出力 |trong ComboBox List 出力対象 để thêm AI sẽ   |
+|    |対象             |được phân tích                               |
+|3.1 |Dropdown         |ComboBox được chọn dropdown ra các AI khả    |
+|    |available AI list|dụng cho người dùng chọn                     |
+|3.2 |Click on item    |Người dùng click vào 1 trong các AI khả dụng |
+|    |from dropdown    |từ list được dropdown                        |
+|    |list             |                                             |
+|3.3 |Remove selected  |GS1 Analyzation Setting loại bỏ AI vừa được  |
+|    |AI from available|người dùng chọn ra khỏi list AI khả dụng để  |
+|    |list             |chọn                                         |
+|3.4 |Update and Create|GS1 Analyzation Setting cập nhật nội dung của|
+|    |new empty        |combobox được chọn và tạo một combobox trống |
+|    |ComboBox         |mới ở cuối list                              |
+|4.0 |Click on Filled  |Người dùng click vào 1 combobox đã có nội    |
+|    |ComboBox in 出力 |dung trước đó trong combobox list để thay AI |
+|    |対象             |dang chọn trong combobox đó bằng AI khác     |
+|4.1 |Dropdown         |Combobox được chọn dropdown ra list các AI   |
+|    |available AI list|đang khả dụng cho người dùng chọn            |
+|4.2 |Click on AI at   |Người dùng click vào một trong các AI trong  |
+|    |dropdown list    |list được dropdown                           |
+|4.3 |Remove selected  |GS1 Analyzation Setting loại AI vừa được     |
+|    |AI from available|người dùng chọn khỏi list các AI khả dụng để |
+|    |list             |chọn                                         |
+|4.4 |Add replaced AI  |GS1 Analyzation Setting thêm AI vừa bị thay  |
+|    |to available list|thế vào list các AI khả dụng                 |
+|4.5 |Update View      |GS1 Analyzation Setting cập nhật hiển thị    |
+|5.0 |Check/Uncheck AI |Người dùng thực hiện check/uncheck vào       |
+|    |をデータとして出 |checkbox [AIをデータとして出力する]          |
+|    |力する           |                                             |
+|5.1 |Update View      |GS1 Analyzation Setting cập nhật hiển thị    |
+|    |                 |theo thao tác của người dùng                 |
+|6.0 |Check/Uncheck 分 |Người dùng thực hiện check/uncheck vào       |
+|    |解できなかったデ |checkbox                                     |
+|    |ータをそのまま出 |分解できなかったデータをそのまま出力する。   |
+|    |力する。         |                                             |
+|6.1 |Update View      |GS1 Analyzation Setting cập nhật hiển thị    |
+|    |                 |theo thao tác của người dùng                 |
+|7.0 |Click Close      |Người dùng click Close để đóng màn hình GS1  |
+|    |                 |Analyzation Setting                          |
+|7.1 |Save current     |GS1 Analyzation Setting lưu toàn bộ setting  |
+|    |setting to RSL   |đang được hiển thị vào file RSL              |
+|    |file             |                                             |
+|7.2 |Close            |GS1 Analyzation Setting đóng màn hình GS1    |
+|    |                 |Analyzation Setting                          |
+
+            • Sequence GS1 Analyze Data
+                                    [pic]
+                  Hình 1.2.3.1-6. Sequence GS1 Analyze Data
+
+                         Bảng 1.2.3.1-6. Giải thích
+|#   |Item             |Description                                  |
+|1.0 |Input Data       |Người dùng sử dụng scanner để quét barcode.  |
+|    |                 |Data của barcode sẽ được truyền cho GS1      |
+|    |                 |Detector.                                    |
+|1.1 |Get Symbology    |Get Symbology Identifier đã được user setting|
+|    |Identifier       |trong màn menu「GS1 ｼﾝﾎﾞﾙ体系識別子」. Thông |
+|    |Setting          |tin này sẽ được đọc từ file                  |
+|    |                 |symbol_Setting.ini khi mà mới khởi động ứng  |
+|    |                 |dụng hoặc khi có thay đổi ở màn hình setting.|
+|1.2 |Check Symbology  |Check xem liệu 3 ký tự đầu tiên của Input    |
+|    |Identifier       |Data có phải là SI mà đã được setting trong  |
+|    |                 |menu 「GS1 ｼﾝﾎﾞﾙ体系識別子」 hay không?      |
+|1.3 |Analyze Input    |Bắt đầu tiến hành phân tích input data.      |
+|    |Data             |                                             |
+|1.4 |Get GS1          |Get Analyzation Setting mà đã được user      |
+|    |Analyzation      |setting. Thông tin này sẽ được đọc từ file   |
+|    |Setting          |RSL khi mà mới khởi động ứng dụng hoặc khi có|
+|    |                 |thay đổi ở màn hình setting.                 |
+|1.5 |Check If         |Tiến hành check xem liệu input data có thể   |
+|    |Extractable Input|được extract hay không dựa vào setting mà    |
+|    |                 |user đã set ở AI Analyzation Setting         |
+|1.6 |Extract Input    |Tiến hành phân tích input data dự vào AI mà  |
+|    |Data Based On AI |đã được chỉ định trong Analyzation Setting. Ở|
+|    |available in     |bước này hệ thống sẽ trích xuất AI trong     |
+|    |setting          |input và data của mỗi AI đó.                 |
+|1.7 |Add Data         |Dự vào AI và Data đã được trích xuất ở bước  |
+|    |Delimiter        |trước. Hệ thống sẽ tiến hành add thêm ký tự  |
+|    |                 |phân tách data. Ký tự phân tách data này sẽ  |
+|    |                 |được user chỉ định ở Analyzation Setting.    |
+|1.8 |Remove AI        |Hệ thống sẽ check xem user có check vào      |
+|    |                 |Checkbox [AIをデータとして出力する] ở        |
+|    |                 |Analyzation Setting hay không? Nếu không     |
+|    |                 |check thì hệ thống sẽ remove AI.             |
+|1.9 |Output Analzyed  |Sau quá trình trích xuất, add ký tự phân     |
+|    |Data             |tách, remove AI… dựa vào setting. Thì hệ     |
+|    |                 |thống sẽ tổng hợp output lại thành chuỗi mà  |
+|    |                 |đã được phân tích để truyền cho RSOuput.     |
+|1.10|Edit UnAnalyzed  |Đây là trong trường hợp dù là GS1 nhưng mà   |
+|    |Data             |không thể phân giải bởi AI mà đang được      |
+|    |                 |support ở system này                         |
+|    |                 |và「分解できなかったデータをそのまま出力す」l|
+|    |                 |à ON. Input data thì sẽ áp dụng              |
+|    |                 |「Delete/削除」「Replace・Cut/置き換え・切り |
+|    |                 |取り」「Add/付加」                           |
+|1.11|Output Edit      |Output data đã được xử lý.                   |
+|1.12|Handle Error     |Đây là trong trường hợp dù là GS1 nhưng mà   |
+|    |                 |không thể phân giải bởi AI mà đang được      |
+|    |                 |support ở system này                         |
+|    |                 |và「分解できなかったデータをそのまま出力す」l|
+|    |                 |à OFF. Nếu có phát sinh error thì sẽ hiển thị|
+|    |                 |error lên màn hình log.                      |
+|1.13|Edit Input Data  |Đây là trong trường hợp input data không phải|
+|    |                 |là GS1. Input sẽ được xử lý như hệ thống data|
+|    |                 |thông thường.                                |
+|1.14|Output Edit      |Output data đã được xử lý.                   |
+
+
+2  Setting delay output
+
+         ❖ UI: Thiết kế UI refer màn hình Output  Atttribute  Setting  phần
+           1.2.1
+         ❖ Logic xử lý
+                                    [pic]
+                     Hình 1.2.3.2. Output Delay Sequence
+                          Table 1.2.3.2. Giải thích
+|#   |Item             |Description                        |
+|1.0 |Get Data to Send |Lấy dữ liệu đang chờ gửi đi trong  |
+|    |                 |Queue                              |
+|1.1 |Send Character   |Gửi một kí tự đến ActiveWindow     |
+|1.2 |Wait Character   |Xử lý chờ giữa các kí tự trong 1   |
+|    |Interval         |block data                         |
+|1.3 |Wait Block       |Xử lý chờ giữa các block data      |
+|    |Interval         |                                   |
+
+
+
+       3 入出力ﾃﾞｰﾀ表示のASCIIとHEXの選択範囲連動
+
+         ❖ UI: Thiết kế UI refer màn hình Main phần 1.2.1
+         ❖ Logic xử lý
+                                    [pic]
+          Hình 1.2.3.3. Sequence Select liên động từ ASCII sang HEX
+                          Table 1.2.3.3: Giải thích
+|#    |Item            |Description                                 |
+|1.0  |Select Text     |Người dùng tiến hành chọn text đang hiển thị|
+|     |                |trên vùng [Input View – ASCII]              |
+|1.1  |Start Selecting |Thông báo cho [Input View – HEX] là người   |
+|     |                |dùng đang thực hiện chọn text               |
+|1.2  |Reset Selection |Reset text về trạng thái không có kí tự nào |
+|     |                |được chọn                                   |
+|1.3  |Reset Done      |Hoàn thành việc reset                       |
+|1.4  |Get Start       |Lấy index của kí tự đầu tiên của vùng được  |
+|     |Position        |select                                      |
+|1.5  |Send Start      |Gửi index vừa lấy được cho [Input View –    |
+|     |Position        |HEX]                                        |
+|1.6  |Set Start       |Thiết lập giá trị index của kí tự đầu tiên  |
+|     |Position        |của vùng sẽ được select liên động           |
+|1.7  |Set Start Done  |Hoàn thành thiết lập giá trị start          |
+|1.8  |Get Length      |Get giá trị độ dài (số ký tự) được select   |
+|1.9  |Send Length     |Gửi độ dài vừa lấy được tới [Input View –   |
+|     |                |HEX]                                        |
+|1.10 |Set Length      |Thiết lập độ dài của vùng sẽ được select    |
+|     |                |liên động                                   |
+|1.11 |Select Hex      |Setting highlight text với giá trị index bắt|
+|     |                |đầu và length đã được set                   |
+
+
+
+       4  Chức năng duy trì kết nối Bluetooth
+
+      ❖ Sequence xử lý
+        [pic]
+                          Hình 1.2.3.4. Connect BT
+
+                          Table 1.2.3.4. Giải thích
+|#  |Item               |Description                             |
+|1.0|通信接続ON         |User thực hiện connect device           |
+|1.1|COMオープンの要求  |Request open cổng COM                   |
+|1.2|COMオープン        |Thực hiện open cổng COM                 |
+|1.3|オブジェクトの作成 |Create object BTTimer                   |
+|1.4|オブジェクトの作成 |Create object OpeningStateTimer         |
+|1.5|SetTimer           |Chỉ định time sẽ gọi hàm callback của   |
+|   |                   |BTTimer                                 |
+|1.6|入力データを待つ   |Chờ input data                          |
+|2.0|BTTimer コールバッ |Callback function của BTTimer           |
+|   |ク                 |                                        |
+|2.1|COMクローズ        |Thực hiện close cổng COM                |
+|2.2|COMポートのクローズ|Chờ cổng COM close thật sự              |
+|   |終了を待つ         |                                        |
+|2.3|COMオープン        |Thực hiện open cổng COM                 |
+|2.4|IsOpenReady = false|Hạ flag IsOpenReady                     |
+|2.5|SetTimer           |Chỉ định time sẽ gọi hàm callback của   |
+|   |                   |OpeningStateTimer                       |
+|2.6|SetTimer           |Chỉ định time sẽ gọi hàm callback của   |
+|   |                   |BTTimer                                 |
+|3.0|OpeningStateTimer  |Callback function của OpeningStateTimer |
+|   |コールバック       |                                        |
+|3.1|IsOpenReady = true |Dựng flag IsOpenReady                   |
+|4.0|DSR Changed        |Event tín hiệu DSR change               |
+|4.1|SetTimer           |Chỉ định time sẽ gọi hàm callback của   |
+|   |                   |BTTimer                                 |
+|4.2|SetTimer           |Chỉ định time để hàm callback của       |
+|   |                   |BTTimer không bao giờ đc call           |
+|4.3|SetTimer           |Chỉ định time để hàm callback của       |
+|   |                   |OpeningStateTimer không bao giờ đc call |
+|4.4|IsOpenReady = true |Dựng flag IsOpenReady                   |
+|4.5|入力データを待つ   |Chờ input data                          |
+|5.0|通信接続OFF        |User thực hiện disconnect device        |
+|5.1|COMクローズの要求  |Request close cổng COM                  |
+|5.2|Dispose            |Hủy object                              |
+|,  |                   |                                        |
+|5.3|                   |                                        |
+|5.4|COMクローズ        |Thực hiện close cổng COM                |
+|6.0|ユーザがデータを入 |User thực hiện quét data từ scanner     |
+|   |力する             |                                        |
+|6.1|データ処理         |Xử lý nhận data                         |
+|6.2|データの送信       |Gửi data đến RSDataHandler              |
+
+
+
+      5  インストール時の32/64bitの自動判定
+
+      ❖ Cấu trúc folder của package sẽ thay đổi như mô tả ở 1.1.2.5
+      ❖ Logic xử lý:
+            • Tạo mới project Setup với thông tin config giống với project
+              Setup của RS-receiverLiteV3.0R2. Project này sẽ build ra file
+              setup.exe và setup.msi cho OS 32 bit và OS 64 bit.
+            • Tạo mới project phán đoán OS. Thực hiện viết script để phán
+              đoán xem OS thuộc loại nào và gọi file setup.exe tương ứng
+              của project Setup
+
+
+6  削除機能のプレビュー機能
+
+      ❖ UI Design: Refer màn hình Edit Data Output và Preview Delete của
+        phần 1.2.1 UI設計
+      ❖ Logic xử lý:
+[pic]
+                      Hình 1.2.3.6. Preview Delete Data
+
+                          Table 1.2.3.6. Giải thích
+|#  |Item               |Description                             |
+|1.0|Click button       |User Click vào button ﾌﾟﾚﾋﾞｭｰ           |
+|   |ﾌﾟﾚﾋﾞｭｰ            |                                        |
+|1.1|GetCfgCutByte      |Load các setting sử dụng trong màn hình |
+|   |                   |PreviewData                             |
+|1.2|GetLastDataBuffer  |Gửi request get data của lần quét       |
+|   |                   |barcode cuối cùng của device từ buffer  |
+|1.3|SendLastDataBuffer |Nhận data trả về từ khối RSDataHandle   |
+|   |                   |sau khi request                         |
+|1.4|ShowPreviewDataWind|Set data và setting và hiển thị của sổ  |
+|   |ow                 |PreviewData                             |
+|2.0|LongPressOnGirdView|User nhấn hoặc kéo thả chuột vào các ô  |
+|   |Screen             |trên của sổ girdview                    |
+|2.1|SetColorForSelectBo|Set đổi màu cho các ô được use chọn để  |
+|   |x                  |cắt                                     |
+|2.2|GetSelecteNumberBox|Get số ô và loại ô cắt mà user chọn trên|
+|   |                   |gird view để cắt                        |
+|2.3|SetNumberForNumberi|Set số ô get được vào numberic của loại |
+|   |c                  |tương ứng                               |
+|3.0|EditNumbericNumber |Sửa đổi giá trị trên numberic           |
+|3.1|GetNumber          |Get giá trị của đối tượng numberic      |
+|3.2|SetSelectrBoxOnGird|Set giá trị get từ numberic tương ứng   |
+|   |View               |với số ô trên GirdView                  |
+|3.3|SetColorSelectBox  |setColor cho số ô đã chọn               |
+|4.0|ClickOKButton      |User click vào button OK                |
+|4.1|SaveSettingToBuffer|Get tất cả setting từ cửa số PreviewData|
+|   |                   |và lưu vào file                         |
+|4.2|UpdateResult       |Báo lại kết quả sau khi lưu setting vào |
+|   |                   |file là fail hay sucessfull             |
+|4.3|RequestUpdateSettin|Gửi request cho khối DeviceManager yêu  |
+|   |g                  |cầu load lại setting                    |
+|4.4|CloseWindow        |Đóng cửa sổ PreviewData                 |
+|5.0|Click キャンセル   |User click vào button キャンセル        |
+|   |Button             |                                        |
+|5.1|CloseWindow        |Đóng cửa sổ PreviewData                 |
+
+
+7  Đối ứng input cho nhiều cổng COM
+
+      ❖ UI Design: Refer màn hình Main và Attribute Setting, Log screen
+        của phần 1.2.1 UI設計
+      ❖ Sequence mô tả logic xử lý
+
+                                    [pic]
+                          Hình 1.2.3.7. MultiDevice
+               Table 1.2.3.7. Giải thích sequence MultiDevice
+|#   |Item          |Description                                  |
+|1.0 |Add device    |User thực hiện Action click vào button add   |
+|    |              |Device                                       |
+|1.1 |Request add   |Gửi request tới AppEngine yêu cầu CreatDevice|
+|    |device        |với ID device đã chọn                        |
+|1.2 |Creat Object  |Tạo object Device Manager quản lý device được|
+|    |              |chọn                                         |
+|1.3 |Update View   |AppEngine gửi yêu cầu update lại view        |
+|2.0 |Connect device|User thực hiện action click vào button       |
+|    |              |connect của device                           |
+|2.1 |Request       |Gửi request tới DeviceManager tương ứng yêu  |
+|    |connect       |cầu connect device                           |
+|    |device        |                                             |
+|2.2 |ConnectCom    |Device thực hiện connect ComPort thông qua   |
+|    |              |khối ComPort                                 |
+|2.3 |UpdateResult  |Trả về kết quả Connect Comport cho khối      |
+|    |              |DeviceManager                                |
+|2.4 |Update View   |Update kết quả Connect Device để khối View   |
+|    |              |thực hiện update                             |
+|2.5 |Send Data     |Data từ device tới khối Comport sẽ được gửi  |
+|    |              |tới khối RSDataHandle                        |
+|2.6 |SendData      |Gửi data tới khối RSOutput, data này sẽ được |
+|    |              |sử dụng để hiển thị dạng text và hex lên cửa |
+|    |              |sổ data Input                                |
+|2.7 |UpdateViewData|Hiển thị data dạng text và hex lên cửa sổ    |
+|    |              |data Input                                   |
+|2.8 |CutByte       |Thực hiện cắt byte data đầu vào sử dụng      |
+|    |              |setting đã load                              |
+|2.9 |Convert       |Convert data sang kiểu encoding đã được      |
+|    |Encoding      |setting do user chọn và chuyển thành dạng    |
+|    |              |text                                         |
+|2.10|RelaceChar    |Thực hiện thay thế kí tự hoặc xóa text data  |
+|    |              |vừa convert từ setting                       |
+|2.11|Addchar       |Thực hiện thêm kí tự vào data vừa replace từ |
+|    |              |setting                                      |
+|2.12|SendData      |Gửi data tới khối RSOutput, data này sẽ được |
+|    |              |sử dụng để hiển thị dạng text và hex lên cửa |
+|    |              |sổ Data Output                               |
+|2.13|Update        |Hiển thị data dạng text và hex lên cửa sổ    |
+|    |ViewData      |Data Output                                  |
+|2.14|AddChar       |Thêm kí tự vào text data theo setting của    |
+|    |              |khối OutputEdit                              |
+|2.15|Encode        |Thực hiện Encode data theo cài đặt của user  |
+|    |              |nếu có                                       |
+|2.16|SendData      |Chuyển Data đã xử lý từ action Encode cho    |
+|    |              |khối RSOutput                                |
+|2.17|SendData      |Thực hiện xử lý gửi data tới Active Window   |
+|2.18|SendData      |Thực hiện xử lý gửi data ra socket           |
+|2.19|SendData      |Thực hiện xử lý set data tới ClipBoard       |
+|2.20|SaveToFile    |Thực hiện xử lý lưu data vào log file        |
+|3.0 |DisConnectDevi|User thực hiện action Click disconnect device|
+|    |ce            |button                                       |
+|3.1 |Request       |Khối view gửi request disconnect device tới  |
+|    |DisConnectDevi|Khối DeviceManager để thực hiện disconnect   |
+|    |ce            |devices                                      |
+|3.2 |DisConnectCom |Thực hiện Disconnect Comport thông qua khối  |
+|    |              |ComPort                                      |
+|3.3 |UpDateResult  |Khối comport thực hiện Disconnect Comport và |
+|    |              |gửi lại kết quả cho khối DeviceManager       |
+|3.4 |SleepThread   |Nếu Disconnect thành công, thực hiện chế độ  |
+|    |              |SleepThread để tránh tiêu tốn tài nguyên hệ  |
+|    |              |thống                                        |
+|3.5 |UpdateView    |Update trạng thái Connect device lên khối    |
+|    |              |View                                         |
+|4.0 |Delete Device |User thực hiện action Click Delete device    |
+|    |              |button                                       |
+|4.1 |Request       |Khối view gửi request delete device tới Khối |
+|    |Delete Device |DeviceManager để thực hiện delete devices    |
+|4.2 |DisConnectCom |Thực hiện Disconnect Comport thông qua khối  |
+|    |              |ComPort                                      |
+|4.3 |UpdateResult  |Khối comport thực hiện Disconnect Comport và |
+|    |              |gửi lại kết quả cho khối DeviceManager       |
+|4.4 |Delete Object |Khối AppEngine xử lý xóa Object quản lý      |
+|    |              |device được yêu cầu xóa                      |
+|4.5 |UpdateView    |Update trạng thái Connect device lên khối    |
+|    |              |View                                         |
+
+
+8  Clip board
+
+      ❖ UI Design: : Refer màn hình Output Attribute Setting của phần
+        1.2.1 UI設計
+      ❖ Sequence mô tả logic xử lý
+                                    [pic]
+                           Hình 1.2.3.8. Clipboard
+                Table 1.2.3.8. Giải thích sequence Clipboard
+|#  |Item               |Description                              |
+|1.0|Select ClipBoard   |User tích chọn vào tùy chọn Clipboard    |
+|   |Mode               |trên cửa sổ OutputEdit                   |
+|1.1|RequestUpdateSettin|Khối View save setting vào file và gửi   |
+|   |g                  |request update setting tới khối          |
+|   |                   |DeviceManager                            |
+|1.2|UpdateSetting      |Khối DeviceManager thực hiện load lại    |
+|   |                   |setting                                  |
+|2.0|SendData           |Data từ device tới khối Comport sẽ được  |
+|   |                   |gửi tới khối RSDataHandle                |
+|2.1|HandleEditData     |Thực hiện quá trình xử lý edit data trong|
+|   |                   |toàn khối RSDataHandle                   |
+|2.2|SendData           |Gửi data tới khối RSOut()                |
+|2.3|OverWriteData      |Thực hiện xử lý ghi đè các data đến từ   |
+|   |                   |các thread khác nhau.                    |
+|   |                   |Data từ Thread nào đến sau thì sẽ được   |
+|   |                   |ghi đè lên data trước, tại một thời điểm,|
+|   |                   |chỉ lưu và gửi duy nhất một data cuối    |
+|   |                   |cùng nhận được                           |
+|2.4|SetData to         |Gửi data đang lưu tới ClipBoard          |
+|   |Clipboard          |                                         |
+|2.5|PatseDataToActivate|Paste data to active window              |
+|   |Window             |                                         |
+
+
+
+        9 Chức năng change endcode của input thành khác với S-JIS
+
+      ❖ UI Design: Refer màn hình Input Attribute Setting của phần 1.2.1
+      ❖ Sequence mô tả logic xử lý:
+                                    [pic]
+                           Hình 1.2.3.9. Encoding
+
+
+                 Table 1.2.3.9. Giải thích sequence Encoding
+
+|#   |項目           |説明                                        |
+|1.0 |Update         |User thực hiện update setting trong         |
+|    |Attribute      |InputAttribute, Editdata and OutputAttribute|
+|    |Setting        |                                            |
+|1.1 |Update Setting |Thực hiện lưu trữ những setting của user    |
+|    |               |trong các biến tạm                          |
+|1.2 |Request save   |User request save setting to RSL file. User |
+|    |setting        |có thể thực hiện save thông qua click button|
+|    |               |save hay khi thực hiện connect comport.     |
+|1.3 |Encoding       |Thực hiện convert những data ở các khối     |
+|    |               |InputAttribute, Editdata, OutputAttribute về|
+|    |               |chuẩn mã encode được user lựa chọn          |
+|1.4 |Save setting   |Request DeviceManager thực hiện save những  |
+|    |               |thông tin thay đổi                          |
+|1.5 |Save to config |Thực hiện cấu trúc lại data để phù hợp với  |
+|    |file           |format của RSL file.                        |
+|1.6 |Save           |Save những thông tin User thay đổi vào RSL  |
+|    |               |file.                                       |
+|1.9 |Response save  |DeviceManager notify lại status lên view.   |
+|    |file status    |                                            |
+|2.0 |On Data        |Comport nhận được data, sử dụng callback để |
+|    |Callback       |đưa data cho RSDataHandler                  |
+|2.1 |Encoding       |Thực hiện encoding data nhận được từ comport|
+|    |               |về chuẩn mã encode user đã lựa chọn         |
+|2.2 |Process data   |Thực hiện chỉnh sửa data theo các thông số  |
+|    |follow Setting |setting ở 3 khối InputAttribute, EditData và|
+|    |config         |OutputData.                                 |
+|2.3 |Send Data      |Gửi data sang cho RSOutput                  |
+
+
+10 Chức năng gửi data nhận đc qua socket
+
+      ❖ UI Design: Refer màn hình Output Attribute Setting của phần 1.2.1
+        UI Design
+      ❖ Sequence mô tả logic xử lý
+         • Xử lý khi thực hiện test connection đến server
+                                    [pic]
+                 Hình 1.2.3.10 - 1. Test connection Sequence
+
+                       Table 1.2.3.10 - 1. Giải thích
+|#   |Item             |Description                          |
+|1.0 |Click button [接 |Khi người dùng chọn vào nút          |
+|    |続テスト]        |[接続テスト]                         |
+|1.1 |Request Connect  |Yêu cầu socket client kết nối đến    |
+|    |To Server        |socket server                        |
+|1.2 |GetSocketInfo    |Lấy thông tin socket từ profile      |
+|    |                 |manager                              |
+|1.3,|Return Value     |Giá trị trả về                       |
+|1.6 |                 |                                     |
+|1.4 |SetSocketInfo    |Set thông tin socket                 |
+|1.5 |Connect          |Connect đến socket server            |
+|1.7 |ShowResult       |Hiển thị kết nối tới server thành    |
+|    |                 |công hay thất bại                    |
+
+         • Xử lý send data đến server thành công:
+                                    [pic]
+              Hình 1.2.3.10 - 2. Send data to Server thành công
+                       Table 1.2.3.10 - 2. Giải thích
+|#   |Item                 |Description                           |
+|1.0 |Request Send Data    |RSOutput yêu cầu Socket Client send   |
+|    |                     |data đến Socket Server                |
+|1.1 |EnQueue              |Add dữ liệu cần gửi đến server vào    |
+|    |                     |hàng đợi                              |
+|2.0 |Connect              |Thực hiện kết nối với server          |
+|2.2 |SendData             |Gửi Data đến socket server            |
+|2.4 |DeQueue              |Xóa data đã được gửi đến server trong |
+|    |                     |hàng đợi                              |
+|1.2,|Response             |Giá trị trả về                        |
+|2.1 |                     |                                      |
+
+         • Xử lý send data đến server thất bại:
+[pic]
+
+                 Hình 1.2.3.10 - 3. Send data to Server Fail
+                          Table 1.2.3.10 - 3. Giải thích
+|#   |Item                 |Description                           |
+|1.0 |Request Send Data    |RSOutput yêu cầu Socket Client send   |
+|    |                     |data đến Socket Server                |
+|1.1 |Enqueue              |Add dữ liệu cần gửi đến server vào    |
+|    |                     |hàng đợi                              |
+|2.0 |Connect              |Thực hiện kết nối tới socket server   |
+|2.2 |SendData             |Gửi data đến socket server            |
+|2.4 |PlaySound            |Play âm thanh khi xảy ra lỗi          |
+|2.5 |WriteLog             |Viết vào file log khi xảy ra lỗi      |
+|2.6 |HandleResendData     |Thực hiện Resend Data                 |
+|2.7 |Dequeue              |Xóa data đã được gửi đến server trong |
+|    |                     |hàng đợi                              |
+|1.2,|Response             |Dữ liệu trả về                        |
+|2.1,|                     |                                      |
+|2.3 |                     |                                      |
+
+
+3 Data Flow
+
+
+1 Flow data giữa View và Controller
+
+       [pic]
+       • Controller sẽ gửi data cần hiển thị lên View
+       • Khi user thực hiện setting trên view thì View sẽ phản ánh  data  đã
+         thay đổi lên màn hình hiển thị. Đồng thời yêu cầu Controller update
+         data
+
+
+2 Flow data giữa Comport, Controller và View
+
+[pic]
+       • Data từ Comport sẽ được gửi đến Controller qua Callback function
+       • Controller sẽ thực hiện việc xử lý data (Edit, replace, delete v.v)
+         và gửi qua khối Ouput
+       • Data sau khi được xử lý sẽ được xuất ra Active  window  hoặc  file,
+         socket
+       • Data cũng sẽ được controller gửi lên View và yêu  cầu  View  update
+         hiển thị
+
+
+
+
+4 Sequence
+
+
+1 Init app
+
+                                    [pic]
+                               1.4.1. Init app
+                           Table 1.4.1. Giải thích
+|#    |Item              |Description                                      |
+|1.0  |Laucher App       |Xử lý khởi động application                      |
+|1.1  |Create Main View  |Create màn hình main của app                     |
+|1.2  |Init Data         |Khởi tạo các loại data                           |
+|1.3, |Create Object     |Tạo object của DeviceManager và ProfileManager   |
+|1.4  |                  |                                                 |
+|1.5  |Read info         |Đọc các thông tin từ Registry: Product key,      |
+|     |                  |Latest file setting v.v                          |
+|1.7  |Check License     |Kiểm tra license của app                         |
+|1.9  |Request Load      |Yêu cầu load thông tin trong file .RSL           |
+|     |Setting           |                                                 |
+|1.10 |Load File         |Đọc file .RSL                                    |
+|1.13 |Get Data          |Get data setting để hiển thị lên main screen     |
+|1.15 |Show Main Window  |Xử lý hiển thị màn hình main                     |
+
+
+2 Xử lý input ->output
+
+[pic]
+                               1.4.2 Xử lý I/O
+
+                           Table 1.4.2. Giải thích
+|Index|Class             |Description                                      |
+|1.0  |OnDataCallBack    |Hàm callback thực hiện gửi data đến RS Receiver  |
+|1.1  |Encoding          |Thực hiện encode data từ scanner với chuẩn encode|
+|     |                  |đã được chọn                                     |
+|1.2  |Process Data Based|Xử lý data theo các điều kiện setting ở phần     |
+|     |on Input Attribute|Input Attribute                                  |
+|     |Setting           |                                                 |
+|1.3  |Process Data Base |Process Data Base on Input data edit.            |
+|     |on Input data     |                                                 |
+|     |edit.             |                                                 |
+|1.4  |Process Data Based|Xử lý data theo các điều kiện setting ở phần     |
+|     |on Output         |Output Attribute                                 |
+|     |Attribute Setting |                                                 |
+|Send |Send Data         |Send data đến khối RSOutput                      |
+|Data |                  |                                                 |
+|1.6  |Send Data         |Send data tới view, bao gồm tất cả data sử dụng  |
+|     |                  |để hiện thị trên input và output view.           |
+|1.7  |Send Key          |Thực hiện output data ra Active Window           |
+|1.8  |Send Data         |Thực hiện output data ra Socket server           |
+|1.10 |Write Data        |Thực hiện output data ra File                    |
+
+
+3 Exit app
+
+   [pic]
+                               1.4.3 Exit app
+
+                           Table 1.4.3. Giải thích
+|#    |Item              |Description                                    |
+|1.0  |Request Exit App  |Yêu cầu kết thúc app từ phía user              |
+|1.1, |Dispose           |Thực hiện hủy object và giải phóng tài nguyên  |
+|1.5, |                  |                                               |
+|1.8, |                  |                                               |
+|1.10 |                  |                                               |
+|1.3  |Close port        |Yêu cầu đóng COM port                          |
+
+
+
+   4 Xử lý error
+
+
+[pic]
+                   1.4.4. Xử lý khi đọc file config bị lỗi
+
+                           Table 1.4.4. Giải thích
+|Index|Class             |Description                                      |
+|1.0  |Select config file|User thực hiện browser để select một config file |
+|1.1  |Load file         |Request load config file đã được user lựa chọn   |
+|1.2  |Read              |Thực hiện đọc file                               |
+|1.10 |                  |                                                 |
+|1.4  |Read config       |Thực hiện đọc dữ liệu sau khi lấy từ file config |
+|1.13 |                  |                                                 |
+|1.5  |Notify error read |Thông báo có lỗi khi đọc file                    |
+|     |config file       |                                                 |
+|1.6  |Show Error Popup  |Request hiển thị error popup                     |
+|1.7  |Select            |User thực hiện lựa chọn options trên màn hình    |
+|1.8  |Select Use Default|Lựa chọn sử dụng default                         |
+|1.9  |Load defaul file  |Request load một file default                    |
+|1.12 |close             |Thực hiện đóng file                              |
+|1.17 |                  |                                                 |
+|1.15 |Cancel            |User lựa chọn cancel option                      |
+|1.16 |Cancel read file  |Hủy bỏ việc load file                            |
+
+
+
+
+5 Phương châm xử lý lỗi
+
+       Phần này sẽ mô tả phương châm xử lý các exception xảy  ra  trong  quá
+       trình hoạt động của hệ thống. Các loại lỗi được xử  lý  bao  gồm  các
+       loại dưới đây:
+          • Unxpected message/ Unxpected exception: Đây là lỗi xảy  ra  khi
+            application nhận được unexpected message (for example:  message
+            từ socket,… ), những lỗi khi thao tác dữ  liệu  như  cắt,  thêm
+            bytes làm sai định dạng encode.
+          • CPU Over Usage/ CPU高負荷: Application sử dụng lượng  CPU  vượt
+            ngưỡng cho phép hoặc tổng CPU của hệ  điều  hành  không  đủ  để
+            application hoạt động bình thường.
+          • Out of memory: Memory bị hết RAM.
+          • Illegal Access: Application sử dụng vùng bộ nhớ không hợp lệ.
+          • Force shutdown: Application bị tắt đột ngột, không theo process
+            tắt thông thường (for example: win force shutdown)
+          • File config bị lỗi (.RSL): User sử dụng một  file  config  khác
+            format của Application, hoặc sử dụng file config bị trèn các kí
+            tự lạ, vỡ font khiến application không thể đọc.
+|#  |Error type        |Phương châm xử lý                         |
+|1  |Unxpected message/|App sẽ thực hiện ghi lại log đối với      |
+|   |Unxpected         |unexpected message /unexpected exception. |
+|   |exception         |Đối với unexpected message thì sau khi ghi|
+|   |                  |log app sẽ ignore message đó mà không xử  |
+|   |                  |lý gì cả. Với những dữ liệu vẫn yêu cầu   |
+|   |                  |được hiển thị trên màn hình thì app vẫn   |
+|   |                  |thực hiện hiển thị dữ liệu đó ( Ví dụ: khi|
+|   |                  |user thực hiện cắt một kí tự khiến kí tự  |
+|   |                  |đó bị lỗi encode thì application vẫn thực |
+|   |                  |hiện hiển thị ký tự đó ( có thể dẫn tới   |
+|   |                  |hiện tượng hiển thị không chính           |
+|   |                  |xác(文字化け)                             |
+|2  |CPU Over Usage/   |Trường hợp CPU không đủ để Application    |
+|   |CPU高負荷         |hoạt động bình thường, Application sẽ show|
+|   |                  |một warning popup cảnh báo tới user và yêu|
+|   |                  |cầu User kiểm tra lại CPU. Sau đó sẽ thực |
+|   |                  |hiện shutdown application                 |
+|3  |Out of memory     |Application sẽ thực hiện ghi log trước khi|
+|   |                  |shutdown.                                 |
+|4  |Illegal Access    |Application sẽ thực hiện ghi log trước khi|
+|   |                  |shutdown.                                 |
+|5  |Force shutdown    |Nếu User đang thực hiện edit config,      |
+|   |                  |application sẽ show a warning popup cảnh  |
+|   |                  |bảo dữ liệu chưa được save và thực hiện   |
+|   |                  |shutdown application.                     |
+|   |                  |Các trường hợp còn lại, Application sẽ    |
+|   |                  |thực hiện shutdown application.           |
+|6  |File config bị lỗi|Khi Application không thể đọc file hoặc   |
+|   |(.RSL)            |trong quá trình đọc phát sinh lỗi,        |
+|   |                  |Application sẽ hiển thị popup thông báo   |
+|   |                  |quá trình đọc xảy ra lỗi và yêu cầu User  |
+|   |                  |kiểm tra lại file setting. (Application sẽ|
+|   |                  |ghi log phần bị lỗi khi thực hiện đọc     |
+|   |                  |config file để hỗ trợ user kiểm tra).     |
+|   |                  |Trong trường hợp User không phát hiện được|
+|   |                  |lỗi, Application sẽ giúp user chạy file   |
+|   |                  |config default.                           |
+
+
+
+6 Phạm vi ảnh hưởng
+
+      Lần phát triển này do thay đổi ngôn ngữ phát  triển  nên  sẽ  làm  ảnh
+      hưởng đến toàn bộ các chức năng của hệ thống. Khi test sẽ cần dựa trên
+      các tài liệu Manual guide, spec và hoạt động của hệ thống hiện tại  để
+      confirm tính đúng đắn của các chức năng
+
+
+
+      7 Các item giới hạn
+
+      Mode clipboard đã xác định đc là sẽ ảnh hưởng đến phía app sử dụng. Độ
+      ảnh hưởng là khá lớn nên lần này sẽ tạm thời pending lại.
+-----------------------
+Thực hiện cài tự động. Tùy vào OS mà sẽ setup bản tương ứng cho phù hợp
+
+
+Thực hiện cài đặt bày tay giống với hệ thống cũ
+
+
+

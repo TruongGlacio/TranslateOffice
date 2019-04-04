@@ -1,0 +1,23 @@
+Hướng dẫn sử dụng api dịch.
+
+1. Giới thiệu 
+Api dịch dựa trên giao thức google rpc (grpc). Sử dụng file run_translate.py để test giao thức và sử dụng.
+
+2. Cấu trúc các phần trong file
+
+Server sẽ nhận đầu vào là các batch với cố định, file run_translate.py đã bao gồm phần hàm hỗ trợ batch 
+Để test các input khác gửi vào, vui lòng chỉnh sửa dòng  
+	strin = "..."
+Hàm main_translate nhận vào đối số là list các câu cần dịch, có thể thêm nhiều câu ở đây.
+
+3. Các thư viện yêu cầu:
+- python version 3.5+
+- Cài đặt các gói trong file requirements.nmtuet.txt
+	Sử dụng lệnh: pip install -r requirements.nmtuet.txt
+
+	Một số gói sẽ yêu cầu cài thêm thư viện ví dụ: 
+		+) mecab: https://pypi.org/project/mecab-python3/
+		+) spacy: sau khi cài thì yêu cầu chạy: python -m spacy download en_core_web_sm
+		+) nltk: sau khi cài, yêu cầu tải dữ liệu cho package tương ứng
+		
+Xin liên hệ với nhóm dev uet nếu vẫn không chạy được.

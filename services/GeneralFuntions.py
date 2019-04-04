@@ -22,27 +22,39 @@ class General:
     
     def ReadTextXmlFile(self,inputXmlFilePath,paragraphs,NAMESPACE,PARA,TEXT):
         
-        OFFICE_PARA=NAMESPACE+PARA
-        OFFICE_TEXT=NAMESPACE+TEXT
-        tree =ET.parse(inputXmlFilePath)
-        for paragraph in tree.getiterator(OFFICE_PARA):
-            for node in paragraph.getiterator(OFFICE_TEXT):
-                if node.text: 
-                    print(node.text)                
-                    paragraphs.append(node.text)   
+        tree =ET.parse(inputXmlFilePath)     
+        print('xml file path', inputXmlFilePath)
+        for namspace in NAMESPACE:
+            print('namspace', namspace)           
+            for para in PARA:                
+                OFFICE_PARA=namspace+para
+                print('para', OFFICE_PARA)                
+                for text in TEXT:
+                    OFFICE_TEXT=namspace+text 
+                    print('text', OFFICE_TEXT)                                        
+                    for paragraph in tree.getiterator(OFFICE_PARA):
+                        for node in paragraph.getiterator(OFFICE_TEXT):
+                            if (node.text).isspace(): 
+                                continue
+                            print('node:',node.text)                
+                            paragraphs.append(node.text)               
         print ('paragraphs: ',paragraphs)        
         return paragraphs
     
     def WriteTextXmlFile(self, inputXmlFilePath,NAMESPACE,PARA,TEXT,inputTextList,count):
-        OFFICE_PARA=NAMESPACE+PARA
-        OFFICE_TEXT=NAMESPACE+TEXT        
-        tree =ET.parse(inputXmlFilePath)
-        for paragraph in tree.getiterator(OFFICE_PARA):
-            for node in paragraph.getiterator(OFFICE_TEXT):
-                if node.text: 
-                    node.text=inputTextList[count]
-                    print(node.text) 
-                    count=count+1
+        tree =ET.parse(inputXmlFilePath)     
+        for namspace in NAMESPACE:
+            for para in PARA:
+                OFFICE_PARA=namspace+para 
+                for text in TEXT:
+                    OFFICE_TEXT=namspace+text                 
+                    for paragraph in tree.getiterator(OFFICE_PARA):
+                        for node in paragraph.getiterator(OFFICE_TEXT):
+                            if (node.text).isspace():
+                                continue
+                            node.text=inputTextList[count]
+                            print(node.text) 
+                            count=count+1             
         tree.write(inputXmlFilePath)
         return count
     def WriteTextFile(self, inputString, textFilePath):    
@@ -141,7 +153,7 @@ class General:
         except:
             print('Cant delete folder, go exit')   
             return False
-            
+
     def GetPathExcelXml(self,zipFolderExcelPath):
         listFilePath=list()
         print('zipFolderExcelPath is :',zipFolderExcelPath)        
@@ -194,7 +206,3 @@ class General:
                 listPath.append(folderPath)
                     
         return listPath
-                
-                
-            
-        

@@ -1,14 +1,19 @@
-import os
-import ConstDefine
-import GeneralFuntions
+try:
+    from xml.etree.cElementTree import XML
+    import xml.etree.cElementTree as ET 
+except ImportError:
+    from xml.etree.ElementTree import XML
 
-generalFunctions=GeneralFuntions.General()
+import os
+import GeneralFuntions
+import ConstDefine
+generalFunctions=GeneralFuntions.General() 
 LenghtListOutput=0
 zipFolder=''
-class ExcelExtrator:
+class DocxExtractor:
 
     def __init__(self):
-        pass
+        pass  
     
     #/........Read text from doc......../    
     def GetCount(self):
@@ -27,48 +32,51 @@ class ExcelExtrator:
         global zipFolder
         zipFolder=zipfolder
 
-    def ExcelReadText(self,inputPath,outputTextFilePath):
+    def ReadWordText(self,inputPath,outputTextFilepath):
         """
-        Take the path of a Excel file as argument, return the text in unicode.
+        Take the path of a docx file as argument, return the text in unicode.
         """     
         folderZipFile=generalFunctions.extraZipfile(inputPath)
         if(folderZipFile==None):
             print ('Error When Extral file')
             return None 
-        ExcelExtrator.SetZipFolder(self,folderZipFile)
-        xmlListFilePath=generalFunctions.GetPathExcelXml(folderZipFile)
+        DocxExtractor.SetZipFolder(self,folderZipFile)
+        xmlListFilePath=generalFunctions.GetPathWordXml(folderZipFile)
         print('xmlFilePath is:',xmlListFilePath)
         paragraphs = list()        
         for xmlPath in xmlListFilePath:
-            paragraphs=generalFunctions.ReadTextXmlFile(xmlPath,paragraphs,ConstDefine.EXCEL_NAMESPACE,ConstDefine.EXCEL_PARA,ConstDefine.EXCEL_TEXT)
+            paragraphs=generalFunctions.ReadTextXmlFile(xmlPath,paragraphs,ConstDefine.WORD_NAMESPACE,ConstDefine.WORD_PARA,ConstDefine.WORD_TEXT)
         print('count', len(paragraphs))   
-        ExcelExtrator.SetCount(self,len(paragraphs))
+        DocxExtractor.SetCount(self,len(paragraphs))
         jsonTextList=generalFunctions.ConvertStringToJson(paragraphs)
-        generalFunctions.WriteTextFile(jsonTextList, outputTextFilePath)        
-        return jsonTextList                    
-    def ExcelWriteTextFromJson(self,inputPath, inputListJson):
-        textListInput=list()        
-        if(inputListJson==None):
+        generalFunctions.WriteTextFile(jsonTextList, outputTextFilepath)        
+        return outputTextFilepath
+
+        #........Write Text ...................#
+    def WriteTextFromJson(seft, inputPath,textListJson,cout):
+        textListInput=list()
+        if(textListJson==None):
             print('input not incorrect, go exit ')
             return None
-        textListInput=generalFunctions.ConvertJsonToString(inputListJson)
-        if(len(textListInput)==ExcelExtrator.GetCount(self)):
+        textListInput=generalFunctions.ConvertJsonToString(textListJson)
+        if(len(textListInput)==cout):
             i=0
             print("number item correct, do write")
-            xmlListFilePath=generalFunctions.GetPathExcelXml(inputPath)
+            xmlListFilePath=generalFunctions.GetPathWordXml(inputPath)
             print('xmlFilePath is:',xmlListFilePath)
             for xmlPath in xmlListFilePath:
-                i=generalFunctions.WriteTextXmlFile(xmlPath,ConstDefine.EXCEL_NAMESPACE,ConstDefine.EXCEL_PARA,ConstDefine.EXCEL_TEXT,textListInput,i)      
+                i=generalFunctions.WriteTextXmlFile(xmlPath,ConstDefine.WORD_NAMESPACE,ConstDefine.WORD_PARA,ConstDefine.WORD_TEXT,textListInput,i)      
             # get parent path of file path
             parentPath=os.path.abspath(os.path.join(inputPath, os.pardir))   
             baseFolderName=os.path.basename(inputPath)   
-            excelFileTarget=parentPath+'/'+baseFolderName+'.xlsx'
+            docFileTarget=parentPath+'/'+baseFolderName+'.docx'
             compressZipFilePath=generalFunctions.CompressOfficeFolder(inputPath)
             if(compressZipFilePath==None):
                 print('erro compress file')
                 return None
-            os.rename(compressZipFilePath, excelFileTarget)
-            print('input path :', inputPath)            
+            os.rename(compressZipFilePath, docFileTarget)
+            print('input path :', inputPath)  
+            return docFileTarget
         else:
             print("number item incorrect, exit")
-            
+            return None            

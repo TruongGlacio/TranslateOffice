@@ -6,8 +6,8 @@ WORD_NAMESPACE = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}
 WORD_PARA = 'p'
 WORD_TEXT = 't' 
 
-EXCEL_NAMESPACE = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
-EXCEL_PARA = 'p'
+EXCEL_NAMESPACE = '{http://schemas.openxmlformats.org/spreadsheetml/2006/main}'
+EXCEL_PARA = 'c'
 EXCEL_TEXT = 't' 
 
 PPT_NAMESPACE = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'

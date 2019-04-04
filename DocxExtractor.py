@@ -3,9 +3,9 @@ try:
     import xml.etree.cElementTree as ET 
 except ImportError:
     from xml.etree.ElementTree import XML
-import zipfile
-import GeneralFuntions
+
 import os
+import GeneralFuntions
 import ConstDefine
 generalFunctions=GeneralFuntions.General() 
 LenghtListOutput=0
@@ -45,12 +45,13 @@ class DocxExtractor:
         print('xmlFilePath is:',xmlListFilePath)
         paragraphs = list()        
         for xmlPath in xmlListFilePath:
-            paragraphs=generalFunctions.ReadTextXmlFile(xmlPath,ConstDefine.WORD_NAMESPACE,ConstDefine.WORD_PARA,ConstDefine.WORD_TEXT)
+            paragraphs=generalFunctions.ReadTextXmlFile(xmlPath,paragraphs,ConstDefine.WORD_NAMESPACE,ConstDefine.WORD_PARA,ConstDefine.WORD_TEXT)
         print('count', paragraphs.count)   
         DocxExtractor.SetCount(self,len(paragraphs))
         jsonTextList=generalFunctions.ConvertStringToJson(paragraphs)
         generalFunctions.WriteTextFile(jsonTextList, outputTextFilepath)        
-        return jsonTextList            
+        return jsonTextList
+
         #........Write Text ...................#
     def WriteTextFromJson(seft, inputPath,textListJson):
         textListInput=list()
@@ -77,4 +78,3 @@ class DocxExtractor:
             print('input path :', inputPath)            
         else:
             print("number item incorrect, exit")
-            

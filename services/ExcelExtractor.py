@@ -45,14 +45,14 @@ class ExcelExtrator:
         ExcelExtrator.SetCount(self,len(paragraphs))
         jsonTextList=generalFunctions.ConvertStringToJson(paragraphs)
         generalFunctions.WriteTextFile(jsonTextList, outputTextFilePath)        
-        return jsonTextList                    
-    def ExcelWriteTextFromJson(self,inputPath, inputListJson):
+        return outputTextFilePath                    
+    def ExcelWriteTextFromJson(self,inputPath, inputListJson,count):
         textListInput=list()        
         if(inputListJson==None):
             print('input not incorrect, go exit ')
             return None
         textListInput=generalFunctions.ConvertJsonToString(inputListJson)
-        if(len(textListInput)==ExcelExtrator.GetCount(self)):
+        if(len(textListInput)==count):
             i=0
             print("number item correct, do write")
             xmlListFilePath=generalFunctions.GetPathExcelXml(inputPath)
@@ -68,7 +68,9 @@ class ExcelExtrator:
                 print('erro compress file')
                 return None
             os.rename(compressZipFilePath, excelFileTarget)
-            print('input path :', inputPath)            
+            print('input path :', inputPath)  
+            return excelFileTarget
         else:
             print("number item incorrect, exit")
+            return None
             

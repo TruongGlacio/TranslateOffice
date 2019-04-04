@@ -27,7 +27,7 @@ class PPTExtractor:
         textList=list()
         textListTable=list()
         textListNormal=list()
-        PPTExtractor.SetZipFolder(inputPath)
+        PPTExtractor.SetZipFolder(self,inputPath)
         textListTable=PPTExtractor.ReadTextTable(self,inputPath)
         textListNormal=PPTExtractor.ReadTextNormal(self,inputPath)
         for text in textListTable:
@@ -37,7 +37,7 @@ class PPTExtractor:
         PPTExtractor.SetLength(self, len(textList))
         textListJson=generalFunctions.ConvertStringToJson(textList)
         generalFunctions.WriteTextFile(textListJson, outputTextFilePath)
-        return textListJson
+        return outputTextFilePath
     def ReadTextNormal(self,inputPath):
         textList=list()
         prs = Presentation(inputPath)    
@@ -71,18 +71,19 @@ class PPTExtractor:
                         print('output text:',c.text_frame.text)
         return textList
     
-    def WriteTextFromJson(seft, inputPath,textListJson):
+    def WriteTextFromJson(seft, inputPath,textListJson,count):
         textList=list()
         textList=generalFunctions.ConvertJsonToString(textListJson)
         lengthString=PPTExtractor.GetLength(seft)
         print('textList:', textList)        
-        if(lengthString==len(textList)): 
+        if(count==len(textList)): 
             print('number item correct, go write data to file')            
-            i= PPTExtractor.WriteTextTable(seft, inputPath,textTableList)
-            PPTExtractor.WriteTextNormal(seft, inputPath,textNomalList,i)    
+            i= PPTExtractor.WriteTextTable(seft, inputPath,textList)
+            PPTExtractor.WriteTextNormal(seft, inputPath,textList,i)    
+            return inputPath
         else:
             print('number item incorrect, go exit')
-            
+            return None
     def WriteTextNormal(self,inputPath, inputStringList,i):
         prs = Presentation(inputPath)
         print('function ReadTextNormal' )
