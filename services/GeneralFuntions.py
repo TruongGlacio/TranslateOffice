@@ -4,6 +4,7 @@ import zipfile
 import sys
 import shutil
 import ConstDefine
+import datetime
 try:
     from xml.etree.cElementTree import XML
     import xml.etree.cElementTree as ET 
@@ -19,9 +20,11 @@ class General:
     def ConvertJsonToString(self,inputJsonArray):      
         textList=json.loads(inputJsonArray)
         return textList
-    
+    def getTime(self):
+        currentDT = datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
+        return str(currentDT)        
     def ReadTextXmlFile(self,inputXmlFilePath,paragraphs,NAMESPACE,PARA,TEXT):
-        
+        print('ReadTextXmlFile Function')                                           
         tree =ET.parse(inputXmlFilePath)     
         print('xml file path', inputXmlFilePath)
         for namspace in NAMESPACE:
@@ -42,6 +45,7 @@ class General:
         return paragraphs
     
     def WriteTextXmlFile(self, inputXmlFilePath,NAMESPACE,PARA,TEXT,inputTextList,count):
+        print('WriteTextXmlFile Function')                                                   
         tree =ET.parse(inputXmlFilePath)     
         for namspace in NAMESPACE:
             for para in PARA:
@@ -72,9 +76,9 @@ class General:
         filename=os.path.splitext(os.path.basename(zipFileName))[0]
         extensionfile=os.path.splitext(os.path.basename(officeFileName))[1]
         print('extention file:',extensionfile)
-        #if(extensionfile=='.xlsx'):
-         #   folderpath=os.path.dirname(zipFileName)
-       #else:
+        if((extensionfile==ConstDefine.PPT_EXTENTION) or (extensionfile == ConstDefine.PDF_EXTENTION)or(extensionfile == ConstDefine.TXT_EXTENTION)):
+            # zipFileName is a file .txt or .pdf, not office zip file, so return zipFileName 
+            return zipFileName            
         folderpath=os.path.dirname(zipFileName)+'/'+filename
         print('folder out put file is :%s',folderpath);      
         print('file name out put file is :%s',filename);          
@@ -90,13 +94,20 @@ class General:
     def ReNameOfficeToZip(self,officeFilePath):
         print('ReNameOfficeToZip Function')            
         # check file exit 
+        print('officeFilePath: ',officeFilePath)                    
         if(os.path.isfile(officeFilePath)):
             folderPath=os.path.dirname(officeFilePath)        
             fileName=os.path.splitext(os.path.basename(officeFilePath))[0]
             extensionFile=os.path.splitext(os.path.basename(officeFilePath))[1]
-            print('extension file is :',extensionFile);                  
-            newfilePath= folderPath+ '/'+ fileName+'1'+extensionFile 
-            zipFilePath= folderPath+ '/'+ fileName+'1.zip'
+            print('extension file is :',extensionFile)   
+            time=General.getTime(self)            
+            newfilePath= folderPath+ '/'+ fileName+'_'+time+extensionFile 
+            if((extensionFile==ConstDefine.PPT_EXTENTION) or (extensionFile == ConstDefine.PDF_EXTENTION) or (extensionFile == ConstDefine.TXT_EXTENTION)):
+                # copy to new file and return newfile                
+                shutil.copyfile(officeFilePath, newfilePath)                   
+                return newfilePath    
+            
+            zipFilePath= folderPath+ '/'+ fileName+'_'+time+'.zip'
             print('old path file is:',officeFilePath)
             print('new path file is:',newfilePath);                          
             for office_extension in ConstDefine.OFFICE_EXTENSION:
@@ -141,9 +152,10 @@ class General:
             print ('error while compress folder, go exit')
             return None
     def DeleteFolder(self,folder):
+        print('DeleteFolder Function')           
         # remove folder after compress                                
         try:
-            for root, dirs, files in os.walk(folder, topdown=False):
+            for root, dirs, LenghtListOutputfiles in os.walk(folder, topdown=False):
                 for name in files:
                     os.remove(os.path.join(root, name))
                 for name in dirs:
@@ -155,6 +167,7 @@ class General:
             return False
 
     def GetPathExcelXml(self,zipFolderExcelPath):
+        print('GetPathExcelXml Function')                   
         listFilePath=list()
         print('zipFolderExcelPath is :',zipFolderExcelPath)        
         for subfolder in ConstDefine.EXCEL_SubFolder:
@@ -166,6 +179,7 @@ class General:
         return listFilePath
         
     def GetPathWordXml(self,zipFolderWordPath):
+        print('GetPathWordXml Function')                           
         listFilePath=list()
         print('zipFolderWordPath is :',zipFolderWordPath)        
         for subfolder in ConstDefine.WORD_SubForder:
@@ -178,6 +192,7 @@ class General:
         return listFilePath
         
     def GetPathPPTXml(self,zipFolderPPTPath):
+        print('GetPathPPTXml Function')                                 
         listFilePath=list()
         print('zipFolderPPTPath is :',zipFolderPPTPath)        
         for subfolder in ConstDefine.PPT_SubFolder:
@@ -189,6 +204,7 @@ class General:
         return listFilePath
     
     def GetAllFilePathInFolder(self, folderPath):
+        print('GetAllFilePathInFolder Function')                                   
         xmlType= '.xml'
         listPath=list()
         print('subfoder:', folderPath)

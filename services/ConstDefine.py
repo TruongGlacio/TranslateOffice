@@ -1,6 +1,8 @@
 WORD_EXTENSION='.docx'
 EXCEL_EXTENTION='.xlsx'
 PPT_EXTENTION='.pptx'
+PDF_EXTENTION='.pdf'
+TXT_EXTENTION='.txt'
 
 WORD_NAMESPACE = ['{http://schemas.openxmlformats.org/wordprocessingml/2006/main}']
 WORD_PARA = ['p']
@@ -19,3 +21,5 @@ OFFICE_EXTENSION=['.doc','.docx','.ppt','.odf','.pptx','.xls','.xlsx']
 EXCEL_SubFolder=['/xl/sharedStrings.xml','/xl/drawings','/xl/charts','/xl/diagrams/data.xml','/xl/comments.xml']
 WORD_SubForder=['/word/embeddings','/word/diagrams/data.xml','/word/comments.xml' ,'/word/']
 PPT_SubFolder=['/xl/sharedStrings.xml']
+
+CODEC_READER_PDF='utf-8'

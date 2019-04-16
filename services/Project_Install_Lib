@@ -5,4 +5,7 @@ pip install xlrd
 pip install xlwt
 pip install python-docx
 
+# lib for pdf read
+sudo python -m pip install pdfminer
+sudo python3 -m pip install pdfminer.six
 

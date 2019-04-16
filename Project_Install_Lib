@@ -1,8 +1,0 @@
-install library
-
-pip install python-pptx
-pip install xlrd
-pip install xlwt
-pip install python-docx
-
-

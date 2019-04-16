@@ -1,7 +1,7 @@
 from pptx import Presentation
 import os
 import GeneralFuntions
-
+import time
 generalFunctions=GeneralFuntions.General()
 LengthOfList=0
 filePath=''
@@ -24,12 +24,17 @@ class PPTExtractor:
         filePath=inpuzipfolder
         
     def ReadTextFromPPT(self,inputPath, outputTextFilePath):
+        print('inputPath:',inputPath)
         textList=list()
         textListTable=list()
         textListNormal=list()
-        PPTExtractor.SetZipFolder(self,inputPath)
-        textListTable=PPTExtractor.ReadTextTable(self,inputPath)
-        textListNormal=PPTExtractor.ReadTextNormal(self,inputPath)
+        folderZipFile=generalFunctions.extraZipfile(inputPath)
+        if(folderZipFile==None or os.path.exists(folderZipFile)==False):
+            print('file not exit, return None')
+            return None
+        PPTExtractor.SetZipFolder(self,folderZipFile)
+        textListTable=PPTExtractor.ReadTextTable(self,folderZipFile)
+        textListNormal=PPTExtractor.ReadTextNormal(self,folderZipFile)
         for text in textListTable:
             textList.append(text)
         for text in textListNormal:
@@ -38,8 +43,10 @@ class PPTExtractor:
         textListJson=generalFunctions.ConvertStringToJson(textList)
         generalFunctions.WriteTextFile(textListJson, outputTextFilePath)
         return outputTextFilePath
+    
     def ReadTextNormal(self,inputPath):
         textList=list()
+        print('inputPath:',inputPath)        
         prs = Presentation(inputPath)    
         print('function ReadTextNormal' )
         for slide in prs.slides:

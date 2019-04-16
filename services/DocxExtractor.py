@@ -33,6 +33,8 @@ class DocxExtractor:
         zipFolder=zipfolder
 
     def ReadWordText(self,inputPath,outputTextFilepath):
+        print('ReadWordText function:')
+        
         """
         Take the path of a docx file as argument, return the text in unicode.
         """     
@@ -54,6 +56,8 @@ class DocxExtractor:
 
         #........Write Text ...................#
     def WriteTextFromJson(seft, inputPath,textListJson,cout):
+        print('WriteTextFromJson function:')
+        
         textListInput=list()
         if(textListJson==None):
             print('input not incorrect, go exit ')
